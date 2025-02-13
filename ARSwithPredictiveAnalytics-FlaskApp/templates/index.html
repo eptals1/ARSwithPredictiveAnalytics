@@ -253,30 +253,23 @@
                             resultsDiv.innerHTML = `
                             <div class="card shadow-sm mb-3">
                                 <div class="card-body">
-                                    <h5 class="card-title">Match Score</h5>
-                                    <div class="progress mb-3">
-                                        <div class="progress-bar" role="progressbar"
-                                             style="width: ${results.similarity_score}%"
-                                             aria-valuenow="${results.similarity_score}"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100">
-                                            ${results.similarity_score}%
+                                    <h5 class="card-title">Resume Match Results</h5>
+                                    ${results.resumes.map((resume, index) => `
+                                        <div class="resume-match mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0">${resume.resume_name}</h6>
+                                                <span class="badge bg-primary">${resume.similarity}%</span>
+                                            </div>
+                                            <div class="progress">
+                                                <div class="progress-bar" role="progressbar"
+                                                     style="width: ${resume.similarity}%"
+                                                     aria-valuenow="${resume.similarity}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <h5 class="card-title">Matching Skills</h5>
-                                    <div class="mb-3">
-                                        ${results.matching_skills.map(skill =>
-                                `<span class="badge bg-success me-2 mb-2">${skill}</span>`
-                            ).join('')}
-                                    </div>
-
-                                    <h5 class="card-title">Missing Skills</h5>
-                                    <div class="mb-3">
-                                        ${results.missing_skills.map(skill =>
-                                `<span class="badge bg-danger me-2 mb-2">${skill}</span>`
-                            ).join('')}
-                                    </div>
+                                    `).join('')}
                                 </div>
                             </div>
                         `;
