@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
+from utils import calculate_resume_similarities
 
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
@@ -49,14 +50,28 @@ def analyze_resumes():
                 resume.save(filepath)
                 resume_paths.append(filepath)
 
-        # TODO: Implement your resume analysis logic here
-        # For now, returning dummy data
+        if not resume_paths:
+            return jsonify({'success': False, 'message': 'No valid resume files uploaded'}), 400
+
+        # Calculate similarities using utils.py function
+        similarities = calculate_resume_similarities(job_path, resume_paths)
+
+        # Clean up uploaded files
+        try:
+            os.remove(job_path)
+            for path in resume_paths:
+                os.remove(path)
+        except Exception as e:
+            print(f"Error cleaning up files: {str(e)}")
+
+        # Return analysis results
         analysis_result = {
             'success': True,
             'data': {
-                'similarity_score': 85,
-                'matching_skills': ['Python', 'Flask', 'Web Development'],
-                'missing_skills': ['Docker', 'AWS']
+                'resumes': similarities,
+                'similarity_score': similarities[0]['similarity'] if similarities else 0,  # Best match score
+                'matching_skills': [],  # We don't have skill extraction in utils.py yet
+                'missing_skills': []    # We don't have skill extraction in utils.py yet
             }
         }
 
