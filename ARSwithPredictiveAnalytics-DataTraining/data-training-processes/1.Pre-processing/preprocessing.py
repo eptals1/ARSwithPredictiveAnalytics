@@ -48,14 +48,14 @@ def load_and_preprocess_csv(csv_path: str, text_column: str = 'text') -> pd.Data
 
 if __name__ == "__main__":
     # Example usage
-    csv_path = "ARSwithPredictiveAnalytics - DataTraining/dataset/2.extracted-text/extracted-text-resumes.csv"
+    csv_path = "dataset/2.extracted-text/extracted-text-resumes.csv"
     
     try:
         # Load and preprocess the resume data
         df = load_and_preprocess_csv(csv_path)
         
         # Save preprocessed data
-        output_path = "ARSwithPredictiveAnalytics - DataTraining/dataset/3.pre-processed/csv-files/resumes.csv"
+        output_path = "dataset/3.pre-processed/csv-files/resumes.csv"
         df.to_csv(output_path, index=False)
         print(f"Preprocessed data saved to {output_path}")
         

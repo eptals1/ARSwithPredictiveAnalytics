@@ -75,11 +75,11 @@ class EntityLabeler:
     def load_data(self):
         try:
             # Load preprocessed resumes
-            csv_path = "ARSwithPredictiveAnalytics - DataTraining/dataset/3.pre-processed/csv-files/resumes.csv"
+            csv_path = "dataset/3.pre-processed/csv-files/resumes.csv"
             self.df = pd.read_csv(csv_path)
             
             # Load existing progress if any
-            json_path = "ARSwithPredictiveAnalytics - DataTraining/dataset/3.pre-processed/json-files/labeled_data.json"
+            json_path = "output/dataset/labeled_data.json"
             if os.path.exists(json_path):
                 with open(json_path, 'r') as f:
                     self.labeled_data = json.load(f)
@@ -170,7 +170,7 @@ class EntityLabeler:
         self.labeled_data.append(labeled_example)
         
         # Save to JSON file
-        json_path = "ARSwithPredictiveAnalytics - DataTraining/output/dataset/labeled_data.json"
+        json_path = "output/dataset/labeled_data.json"
         os.makedirs(os.path.dirname(json_path), exist_ok=True)
         with open(json_path, 'w') as f:
             json.dump(self.labeled_data, f, indent=2)

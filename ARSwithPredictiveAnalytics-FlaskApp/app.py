@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utils import calculate_resume_similarities
 
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
@@ -26,13 +25,13 @@ def index():
 def analyze_resumes():
     try:
         if 'job_description' not in request.files:
-            return jsonify({'success': False, 'message': 'No job requirement uploaded'}), 400
+            return jsonify({'success': False, 'message': 'No job description uploaded'}), 400
         
         job_file = request.files['job_description']
         if not job_file or not allowed_file(job_file.filename):
-            return jsonify({'success': False, 'message': 'Invalid job requirement file'}), 400
+            return jsonify({'success': False, 'message': 'Invalid job description file'}), 400
 
-        # Save job requirement
+        # Save job description
         job_filename = secure_filename(job_file.filename)
         job_path = os.path.join(app.config['UPLOAD_FOLDER'], job_filename)
         job_file.save(job_path)
@@ -53,13 +52,16 @@ def analyze_resumes():
         # TODO: Implement your resume analysis logic here
         # For now, returning dummy data
         analysis_result = {
+            'success': True,
             'data': {
                 'similarity_score': 85,
                 'matching_skills': ['Python', 'Flask', 'Web Development'],
                 'missing_skills': ['Docker', 'AWS']
             }
         }
+
         return jsonify(analysis_result)
+
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
