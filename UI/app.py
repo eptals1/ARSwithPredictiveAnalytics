@@ -2,7 +2,9 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utils import calculate_resume_similarities
+from utilities.jaccard_similarity import calculate_resume_similarities
+from utilities.roBERTa_NER import recognize_entities, calculate_match_score
+from utilities.XGBoost import predict_job_fit
 
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
