@@ -86,6 +86,8 @@ def process_document_folder(folder_path: str, output_csv: str) -> None:
 
 if __name__ == "__main__":
     # Example usage
+
     folder_path = "ARSwithPredictiveAnalytics-DataTraining/input/dataset/linked-in/job_requirements"  # Replace with your folder path
     output_csv = "ARSwithPredictiveAnalytics-DataTraining/output/dataset/linked-in/job_requirements/extracted-text-job-requirements.csv"  # Replace with desired output CSV path
+
     process_document_folder(folder_path, output_csv)
