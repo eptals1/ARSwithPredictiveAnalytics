@@ -9,7 +9,7 @@ from utilities.pre_processing import calculate_resume_similarities
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'UI/temps/uploads'
+app.config['UPLOAD_FOLDER'] = 'C:/Users/Acer/Desktop/Talaba,Ephraim/ARSwithPredictiveAnalytics/UI/temps'
 csrf = CSRFProtect(app)
 
 # Ensure upload directory exists
