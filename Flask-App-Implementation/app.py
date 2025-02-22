@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utilities.pre_processing import calculate_resume_similarities    
+from utilities.RoBERTa_NER import calculate_resume_similarities    
 # from utilities.roBERTa_NER import recognize_entities, calculate_match_score
 # from utilities.XGBoost import predict_job_fit
 
