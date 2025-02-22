@@ -6,3 +6,5 @@ output
 uploads
 __pycache__
 ARS-dataset
+RoBERTa-fine-tuning/resumes_raw.txt
+RoBERTa-fine-tuning/resumes_labelled.txt
