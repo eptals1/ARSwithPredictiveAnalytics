@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utils import calculate_resume_similarities
+from utilities.pre_processing import calculate_resume_similarities    
+# from utilities.roBERTa_NER import recognize_entities, calculate_match_score
+# from utilities.XGBoost import predict_job_fit
 
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = 'UI/temps/uploads'
 csrf = CSRFProtect(app)
 
 # Ensure upload directory exists
@@ -25,6 +27,7 @@ def index():
 @app.route('/resume-matcher/analyze', methods=['POST'])
 def analyze_resumes():
     try:
+        # Check if job description is uploaded
         if 'job_description' not in request.files:
             return jsonify({'success': False, 'message': 'No job description uploaded'}), 400
         
@@ -56,6 +59,12 @@ def analyze_resumes():
         # Calculate similarities using utils.py function
         similarities = calculate_resume_similarities(job_path, resume_paths)
 
+        # Calculate entities using utils.py function
+        # for resume_path in resume_paths:
+        #     resume_text = extract_text_from_file(resume_path)
+        #     entities = recognize_entities_for_each_resume(resume_text)
+        #     match_score = calculate_match_score(resume_text, entities)
+
         # Clean up uploaded files
         try:
             os.remove(job_path)
@@ -70,8 +79,8 @@ def analyze_resumes():
             'data': {
                 'resumes': similarities,
                 'similarity_score': similarities[0]['similarity'] if similarities else 0,  # Best match score
-                'matching_skills': [],  # We don't have skill extraction in utils.py yet
-                'missing_skills': []    # We don't have skill extraction in utils.py yet
+                # 'matching_skills': [match_score['matching_skills']],  # We don't have skill extraction in utils.py yet
+                # 'missing_skills': [match_score['missing_skills']],    # We don't have skill extraction in utils.py yet
             }
         }
 
