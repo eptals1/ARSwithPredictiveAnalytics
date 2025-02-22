@@ -2,21 +2,39 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utilities.sampleRoBERTa import calculate_resume_similarities    
+from utilities.RoBERTa_NER import calculate_resume_similarities    
 # from utilities.XGBoost import predict_job_fit
 
+"""     
+app
+
+The Flask web application instance. This is the main entry point for the
+web application.
+"""
 app = Flask(__name__)  
-app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
+
+# Required for CSRF
+app.config['SECRET_KEY'] = os.urandom(24)  
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'Flask-App-Implementation/temps/uploads'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 csrf = CSRFProtect(app)
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# File extensions that are allowed for upload
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
 
 def allowed_file(filename):
+    """
+    Check if a given filename has an allowed extension.
+
+    Args:
+        filename (str): The name of the file to check.
+
+    Returns:
+        bool: True if the file has an allowed extension, False otherwise.
+    """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
