@@ -9,7 +9,7 @@ from utilities.pre_processing import calculate_resume_similarities
 app = Flask(__name__)  
 app.config['SECRET_KEY'] = os.urandom(24)  # Required for CSRF
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'C:/Users/Acer/Desktop/Talaba,Ephraim/ARSwithPredictiveAnalytics/UI/temps'
+app.config['UPLOAD_FOLDER'] = 'Flask-App-Implementation/temps/uploads'
 csrf = CSRFProtect(app)
 
 # Ensure upload directory exists
@@ -68,8 +68,9 @@ def analyze_resumes():
         # Clean up uploaded files
         try:
             os.remove(job_path)
-            for path in resume_paths:
-                os.remove(path)
+            # for path in resume_paths:
+            #     os.remove(path)
+
         except Exception as e:
             print(f"Error cleaning up files: {str(e)}")
 
