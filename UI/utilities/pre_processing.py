@@ -8,14 +8,14 @@ import PyPDF2
 import docx
 
 # Download required NLTK data
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
+# try:
+#     nltk.data.find('tokenizers/punkt')
+#     nltk.data.find('corpora/stopwords')
+#     nltk.data.find('corpora/wordnet')
+# except LookupError:
+#     nltk.download('punkt')
+#     nltk.download('stopwords')
+#     nltk.download('wordnet')
 
 def extract_text_from_pdf(pdf_path):
     """Extract text from PDF file"""

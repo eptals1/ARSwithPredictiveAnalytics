@@ -12,7 +12,38 @@
     <body class="bg-light">
         <div class="container-fluid py-2">
             <!--h2 class="text-center"><h2-->
+    <body class="bg-light">
+        <div class="container-fluid py-2">
+            <!--h2 class="text-center"><h2-->
 
+            <div class="row">
+                <!-- Left Section - Upload and Requirements -->
+                <div class="col-md-6 pe-md-2">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">
+                                <i class="fas fa-file-alt me-2"></i>Step 1.
+                                Upload Resumes
+                            </h5>
+                            <div class="custom-file-upload" id="resumeUpload">
+                                <i
+                                    class="fas fa-cloud-upload-alt fa-2x mb-1"
+                                ></i>
+                                <p class="mb-0">Drag & Drop Resumes Here</p>
+                                <p class="text-muted small">
+                                    or click to browse
+                                </p>
+                                <input
+                                    type="file"
+                                    id="resumeInput"
+                                    multiple
+                                    accept=".pdf,.doc,.docx"
+                                    class="d-none"
+                                />
+                            </div>
+                            <div class="resume-list" id="uploadedResumes">
+                                <!-- Uploaded resumes will appear here -->
+                            </div>
             <div class="row">
                 <!-- Left Section - Upload and Requirements -->
                 <div class="col-md-6 pe-md-2">
@@ -70,7 +101,48 @@
                             <div class="resume-list" id="uploadedJob">
                                 <!-- Uploaded job description will appear here -->
                             </div>
+                            <!-- Job Requirements Section -->
+                            <h5 class="card-title mb-2">
+                                <i class="fas fa-briefcase me-1"></i>Step 2.
+                                Upload Job Requirement
+                            </h5>
+                            <div
+                                class="custom-file-upload"
+                                id="jobRequirementUpload"
+                            >
+                                <i
+                                    class="fas fa-cloud-upload-alt fa-2x mb-1"
+                                ></i>
+                                <p class="mb-0">
+                                    Drag & Drop Job Requirement Here
+                                </p>
+                                <p class="text-muted small">
+                                    or click to browse (.pdf, .doc, .docx)
+                                </p>
+                                <input
+                                    type="file"
+                                    id="jobInput"
+                                    accept=".pdf,.doc,.docx"
+                                    class="d-none"
+                                />
+                            </div>
+                            <div class="resume-list" id="uploadedJob">
+                                <!-- Uploaded job description will appear here -->
+                            </div>
 
+                            <div class="mt-1">
+                                <button
+                                    type="button"
+                                    id="analyzeButton"
+                                    class="btn btn-primary w-100"
+                                >
+                                    <i class="fas fa-search me-2"></i>Step 3.
+                                    Analyze Resumes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                             <div class="mt-1">
                                 <button
                                     type="button"
@@ -93,7 +165,27 @@
                                 <i class="fas fa-chart-bar me-2"></i>Analytics
                                 Result
                             </h4>
+                <!-- Right Section - Results -->
+                <div class="col-md-6 ps-md-2 mt-4 mt-md-0">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">
+                                <i class="fas fa-chart-bar me-2"></i>Analytics
+                                Result
+                            </h4>
 
+                            <div id="analysisProgress" class="d-none">
+                                <div class="progress mb-3">
+                                    <div
+                                        class="progress-bar progress-bar-striped progress-bar-animated"
+                                        role="progressbar"
+                                        style="width: 100%"
+                                    ></div>
+                                </div>
+                                <p class="text-center text-muted">
+                                    Analyzing resumes...
+                                </p>
+                            </div>
                             <div id="analysisProgress" class="d-none">
                                 <div class="progress mb-3">
                                     <div
@@ -116,12 +208,22 @@
                                         to see suitable resumes
                                     </p>
                                 </div>
+                            <div id="matchResults">
+                                <!-- Results will be populated here -->
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                                    <p>
+                                        Upload resumes and set job requirements
+                                        to see suitable resumes
+                                    </p>
+                                </div>
                             </div>
                             <div
                                 id="analysisResults"
                                 style="
                                     display: none;
                                     overflow-y: scroll;
+                                    overflow-x: hidden;
                                     max-height: 474px;
                                 "
                             ></div>
@@ -140,7 +242,22 @@
                 const resumeInput = document.getElementById("resumeInput");
                 const uploadedResumes =
                     document.getElementById("uploadedResumes");
+        <script src="/static/js/jquery-3.6.0.js"></script>
+        <script src="/static/js/bootstrap-5.3.0.bundle.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                // Handle drag and drop for resumes
+                const resumeDropZone = document.getElementById("resumeUpload");
+                const resumeInput = document.getElementById("resumeInput");
+                const uploadedResumes =
+                    document.getElementById("uploadedResumes");
 
+                // Handle drag and drop for job requirements
+                const jobDropZone = document.getElementById(
+                    "jobRequirementUpload"
+                );
+                const jobInput = document.getElementById("jobInput");
+                const uploadedJob = document.getElementById("uploadedJob");
                 // Handle drag and drop for job requirements
                 const jobDropZone = document.getElementById(
                     "jobRequirementUpload"
@@ -149,7 +266,19 @@
                 const uploadedJob = document.getElementById("uploadedJob");
 
                 const analyzeButton = document.getElementById("analyzeButton");
+                const analyzeButton = document.getElementById("analyzeButton");
 
+                // Add drag and drop handlers for both zones
+                [resumeDropZone, jobDropZone].forEach((dropZone) => {
+                    ["dragenter", "dragover", "dragleave", "drop"].forEach(
+                        (eventName) => {
+                            dropZone.addEventListener(
+                                eventName,
+                                preventDefaults,
+                                false
+                            );
+                        }
+                    );
                 // Add drag and drop handlers for both zones
                 [resumeDropZone, jobDropZone].forEach((dropZone) => {
                     ["dragenter", "dragover", "dragleave", "drop"].forEach(
@@ -169,7 +298,22 @@
                             false
                         );
                     });
+                    ["dragenter", "dragover"].forEach((eventName) => {
+                        dropZone.addEventListener(
+                            eventName,
+                            () => highlight(dropZone),
+                            false
+                        );
+                    });
 
+                    ["dragleave", "drop"].forEach((eventName) => {
+                        dropZone.addEventListener(
+                            eventName,
+                            () => unhighlight(dropZone),
+                            false
+                        );
+                    });
+                });
                     ["dragleave", "drop"].forEach((eventName) => {
                         dropZone.addEventListener(
                             eventName,
@@ -183,7 +327,14 @@
                     e.preventDefault();
                     e.stopPropagation();
                 }
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
 
+                function highlight(element) {
+                    element.classList.add("border-primary");
+                }
                 function highlight(element) {
                     element.classList.add("border-primary");
                 }
@@ -191,7 +342,20 @@
                 function unhighlight(element) {
                     element.classList.remove("border-primary");
                 }
+                function unhighlight(element) {
+                    element.classList.remove("border-primary");
+                }
 
+                // Resume upload handlers
+                resumeDropZone.addEventListener(
+                    "drop",
+                    handleResumeDrop,
+                    false
+                );
+                resumeDropZone.addEventListener("click", () =>
+                    resumeInput.click()
+                );
+                resumeInput.addEventListener("change", handleResumeFiles);
                 // Resume upload handlers
                 resumeDropZone.addEventListener(
                     "drop",
@@ -207,7 +371,20 @@
                 jobDropZone.addEventListener("drop", handleJobDrop, false);
                 jobDropZone.addEventListener("click", () => jobInput.click());
                 jobInput.addEventListener("change", handleJobFiles);
+                // Job requirements upload handlers
+                jobDropZone.addEventListener("drop", handleJobDrop, false);
+                jobDropZone.addEventListener("click", () => jobInput.click());
+                jobInput.addEventListener("change", handleJobFiles);
 
+                function handleResumeDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleResumeFiles({
+                        target: {
+                            files: files,
+                        },
+                    });
+                }
                 function handleResumeDrop(e) {
                     const dt = e.dataTransfer;
                     const files = dt.files;
@@ -227,7 +404,23 @@
                         },
                     });
                 }
+                function handleJobDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleJobFiles({
+                        target: {
+                            files: files,
+                        },
+                    });
+                }
 
+                function handleResumeFiles(e) {
+                    const files = [...e.target.files];
+                    files.forEach((file) => {
+                        const div = document.createElement("div");
+                        div.className =
+                            "resume-item d-flex justify-content-between align-items-center";
+                        div.innerHTML = `
                 function handleResumeFiles(e) {
                     const files = [...e.target.files];
                     files.forEach((file) => {
@@ -246,7 +439,20 @@
                         uploadedResumes.appendChild(div);
                     });
                 }
+                        uploadedResumes.appendChild(div);
+                    });
+                }
 
+                function handleJobFiles(e) {
+                    const files = [...e.target.files];
+                    if (files.length > 0) {
+                        // Only show the last uploaded file
+                        uploadedJob.innerHTML = "";
+                        const file = files[0];
+                        const div = document.createElement("div");
+                        div.className =
+                            "resume-item d-flex justify-content-between align-items-center";
+                        div.innerHTML = `
                 function handleJobFiles(e) {
                     const files = [...e.target.files];
                     if (files.length > 0) {
@@ -268,7 +474,14 @@
                         uploadedJob.appendChild(div);
                     }
                 }
+                        uploadedJob.appendChild(div);
+                    }
+                }
 
+                // Handle analyze button click
+                analyzeButton.addEventListener("click", function () {
+                    const resumeFiles = Array.from(resumeInput.files);
+                    const jobFile = jobInput.files[0];
                 // Handle analyze button click
                 analyzeButton.addEventListener("click", function () {
                     const resumeFiles = Array.from(resumeInput.files);
@@ -278,7 +491,15 @@
                         alert("Please upload at least one resume");
                         return;
                     }
+                    if (resumeFiles.length === 0) {
+                        alert("Please upload at least one resume");
+                        return;
+                    }
 
+                    if (!jobFile) {
+                        alert("Please upload a job description");
+                        return;
+                    }
                     if (!jobFile) {
                         alert("Please upload a job description");
                         return;
@@ -290,9 +511,20 @@
                         '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
                     $("#matchResults").hide();
                     $("#analysisProgress").removeClass("d-none");
+                    // Show loading state
+                    analyzeButton.disabled = true;
+                    analyzeButton.innerHTML =
+                        '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+                    $("#matchResults").hide();
+                    $("#analysisProgress").removeClass("d-none");
 
                     const formData = new FormData();
+                    const formData = new FormData();
 
+                    // Add resumes
+                    resumeFiles.forEach((file, index) => {
+                        formData.append(`resumes[]`, file);
+                    });
                     // Add resumes
                     resumeFiles.forEach((file, index) => {
                         formData.append(`resumes[]`, file);
@@ -300,7 +532,27 @@
 
                     // Add job description
                     formData.append("job_description", jobFile);
+                    // Add job description
+                    formData.append("job_description", jobFile);
 
+                    // Send to server
+                    fetch("/resume-matcher/analyze", {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token() }}",
+                        },
+                    })
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error("Network response was not ok");
+                            }
+                            return response.json();
+                        })
+                        .then((data) => {
+                            if (data.success) {
+                                const results = data.data;
+                                $("#matchResults").hide();
                     // Send to server
                     fetch("/resume-matcher/analyze", {
                         method: "POST",
@@ -324,9 +576,16 @@
                                 const resultsDiv =
                                     document.getElementById("analysisResults");
                                 resultsDiv.innerHTML = `
+                                // Update results section
+                                const resultsDiv =
+                                    document.getElementById("analysisResults");
+                                resultsDiv.innerHTML = `
                             <div class="card shadow-sm mb-3">
                                 <div class="card-body">
                                     <h5 class="card-title">Resume Match Results</h5>
+                                    ${results.resumes
+                                        .map(
+                                            (resume, index) => `
                                     ${results.resumes
                                         .map(
                                             (resume, index) => `
@@ -344,6 +603,9 @@
                                                 </div>
                                             </div>
                                         </div>
+                                    `
+                                        )
+                                        .join("")}
                                     `
                                         )
                                         .join("")}
@@ -374,4 +636,28 @@
             });
         </script>
     </body>
+                                // Show results section
+                                resultsDiv.style.display = "block";
+                            } else {
+                                throw new Error(
+                                    data.message || "Analysis failed"
+                                );
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error:", error);
+                            alert("Error analyzing resumes: " + error.message);
+                        })
+                        .finally(() => {
+                            // Reset button state
+                            analyzeButton.disabled = false;
+                            analyzeButton.innerHTML =
+                                '<i class="fas fa-search me-2"></i>Step 3. Analyze Resumes';
+                            $("#analysisProgress").addClass("d-none");
+                        });
+                });
+            });
+        </script>
+    </body>
 </html>
+
