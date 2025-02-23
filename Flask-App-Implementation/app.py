@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utilities.RoBERTa_NER import calculate_resume_similarities    
+from utilities.sampleRoBERTa import calculate_resume_similarities    
 # from utilities.XGBoost import predict_job_fit
 
 app = Flask(__name__)  
@@ -78,6 +78,7 @@ def score_resume():
             'success': True,
             'data': {
                 'resumes': similarities,
+                #'entities': entities,
                 'similarity_score': similarities[0]['similarity'] if similarities else 0,  # Best match score
                 # 'matching_skills': [match_score['matching_skills']],  # We don't have skill extraction in utils.py yet
                 # 'missing_skills': [match_score['missing_skills']],    # We don't have skill extraction in utils.py yet

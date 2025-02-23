@@ -1,5 +1,21 @@
 import os
 from utilities.pre_processing import extract_text_from_file, preprocess_text
+from transformers import pipeline
+
+# Initialize the NER pipeline
+ner_pipeline = pipeline('ner', model='xlm-roberta-large-finetuned-conll03-english',
+ tokenizer='xlm-roberta-large-finetuned-conll03-english')
+
+# Extract Entities
+def extract_entities(text):
+    ner_results = ner_pipeline(text)
+    entities = set()  # Use set to avoid duplicates
+    
+    for entity in ner_results:
+        if entity['score'] > 0.7:  # Filter low-confidence entities
+            entities.add(entity['word'].strip())
+    
+    return entities
 
 def jaccard_similarity(set1, set2):
     """Calculate Jaccard similarity between two sets"""
@@ -14,7 +30,6 @@ def calculate_resume_similarities(job_path, resume_paths):
     job_tokens = set(preprocess_text(job_text))
     
     # Calculate similarities for each resume
-    similarities = []
     for resume_path in resume_paths:
         resume_text = extract_text_from_file(resume_path)
         resume_tokens = set(preprocess_text(resume_text))
