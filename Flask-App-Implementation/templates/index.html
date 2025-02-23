@@ -443,8 +443,9 @@
                                 resultsDiv.innerHTML = `
                             <div class="card shadow-sm mb-3" style="overflow-y: scroll;
                                     max-height: 450px;">
-                                <div class="card-body">
-                                    <h5 class="card-title">Resume Scores</h5>
+                                <div class="card-body" style="overflow-y: scroll;
+                                    max-height: 450px; min-height: 450px;">
+                                     <!--h5 class="card-title">Resume Scores</h5-->
                                     ${results.resumes
                                         .map(
                                             (resume, index) => `
