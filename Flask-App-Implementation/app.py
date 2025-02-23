@@ -24,8 +24,8 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
-@app.route('/resume-matcher/analyze', methods=['POST'])
-def analyze_resumes():
+@app.route('/score-resume', methods=['POST'])
+def score_resume():
     try:
         # Check if job description is uploaded
         if 'job_description' not in request.files:
