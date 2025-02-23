@@ -1,15 +1,17 @@
 import os
-from utilities.pre_processing import extract_text_from_file, preprocess_text
 from transformers import pipeline
+from utilities.pre_processing import extract_text_from_file, preprocess_text
 
-# Initialize the NER pipeline
+# Load RoBERTa NER model
 ner_pipeline = pipeline('ner', model='xlm-roberta-large-finetuned-conll03-english',
- tokenizer='xlm-roberta-large-finetuned-conll03-english')
+                         tokenizer='xlm-roberta-large-finetuned-conll03-english')
 
-# Extract Entities
+
+# Function to extract named entities
 def extract_entities(text):
+    """Extract named entities using RoBERTa NER"""
     ner_results = ner_pipeline(text)
-    entities = set()  # Use set to avoid duplicates
+    entities = set()  # Use a set to remove duplicates
     
     for entity in ner_results:
         if entity['score'] > 0.7:  # Filter low-confidence entities
@@ -17,29 +19,32 @@ def extract_entities(text):
     
     return entities
 
+# Function to calculate Jaccard similarity
 def jaccard_similarity(set1, set2):
-    """Calculate Jaccard similarity between two sets"""
-    intersection = len(set1.intersection(set2))
-    union = len(set1.union(set2))
-    return intersection / union if union != 0 else 0
+    """Compute Jaccard similarity"""
+    intersection = set1.intersection(set2)
+    union = set1.union(set2)
+    return len(intersection) / len(union) if union else 0
 
+# Main function to process resumes
 def calculate_resume_similarities(job_path, resume_paths):
-    """Calculate Jaccard similarity between job requirements and multiple resumes"""
-    # Extract and preprocess job requirements
+    """Compute similarity scores for resumes against job description"""
     job_text = extract_text_from_file(job_path)
-    job_tokens = set(preprocess_text(job_text))
-    
-    # Calculate similarities for each resume
+    job_entities = extract_entities(job_text)
+
+    results = []
+
     for resume_path in resume_paths:
         resume_text = extract_text_from_file(resume_path)
-        resume_tokens = set(preprocess_text(resume_text))
-        similarity = jaccard_similarity(resume_tokens, job_tokens)
-        
-        similarities.append({
-            'resume_name': os.path.basename(resume_path),
-            'similarity': round(similarity * 100, 2)  # Convert to percentage
+        resume_entities = extract_entities(resume_text)
+        similarity_score = jaccard_similarity(resume_entities, job_entities)
+
+        results.append({
+            'filename': os.path.basename(resume_path),
+            'similarity': round(similarity_score, 2)
         })
+
+    # Sort results by highest similarity score
+    results.sort(key=lambda x: x['similarity'], reverse=True)
     
-    # Sort by similarity score in descending order
-    similarities.sort(key=lambda x: x['similarity'], reverse=True)
-    return similarities
+    return results
