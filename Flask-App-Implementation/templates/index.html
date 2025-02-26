@@ -15,14 +15,17 @@
 
             <div class="row">
                 <!-- Left Section - Upload and Requirements -->
-                <div class="col-md-6 pe-md-2">
+                <div class="col-md-4 pe-md-2">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title mb-2">
-                                <i class="fas fa-file-alt me-2"></i>Step 1.
+                                <i class="fas fa-file-alt me-2"></i>
                                 Upload Resumes
                             </h5>
-                            <div class="custom-file-upload" id="resumeUpload">
+                            <div
+                                class="custom-file-upload p-2"
+                                id="resumeUpload"
+                            >
                                 <i
                                     class="fas fa-cloud-upload-alt fa-2x mb-1"
                                 ></i>
@@ -38,13 +41,28 @@
                                     class="d-none"
                                 />
                             </div>
-                            <div class="resume-list" id="uploadedResumes">
-                                <!-- Uploaded resumes will appear here -->
+                            <div
+                                id="uploadedResumeCount"
+                                class="mb-2 text-muted"
+                            >
+                                No. of Resumes uploaded:
+                            </div>
+                            <div
+                                class="resume-list p-2"
+                                id="uploadedResumes"
+                                style="
+                                    height: 70px;
+                                    border: 2px dashed#f7e8d2c8;
+                                "
+                            >
+                                <span class="text-muted text-center">
+                                    Uploaded resumes will appear here...
+                                </span>
                             </div>
 
                             <!-- Job Requirements Section -->
-                            <h5 class="card-title mb-2">
-                                <i class="fas fa-briefcase me-1"></i>Step 2.
+                            <h5 class="card-title mb-2 mt-2">
+                                <i class="fas fa-briefcase me-1"></i>
                                 Upload Job Requirement
                             </h5>
                             <div
@@ -67,18 +85,86 @@
                                     class="d-none"
                                 />
                             </div>
-                            <div class="resume-list" id="uploadedJob">
-                                <!-- Uploaded job description will appear here -->
+                            <div
+                                class="resume-list p-2"
+                                id="uploadedJob"
+                                style="
+                                    height: 70px;
+                                    border: 2px dashed#f7e8d2c8;
+                                "
+                            >
+                                <span
+                                    id="uploadedJobFile"
+                                    class="text-muted text-center"
+                                >
+                                    Uploaded job requirement will appear here...
+                                </span>
                             </div>
 
-                            <div class="mt-1">
+                            <div class="mt-2">
+                                <button
+                                    type="button"
+                                    id="scoringButton"
+                                    class="btn btn-primary w-100"
+                                >
+                                    <i class="fas fa-star-half-stroke me-2"></i>
+                                    Get Resume Scores
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Section - Results -->
+                <div class="col-md-4 ps-md-2 mt-4 mt-md-0">
+                    <div class="card shadow-sm" style="min-height: 580px">
+                        <div class="card-body">
+                            <h4 class="card-title mb-4">
+                                <i class="fas fa-star-half-stroke me-2"></i>
+                                Resume Scores
+                            </h4>
+
+                            <div id="analysisProgress" class="d-none">
+                                <div class="progress mb-3">
+                                    <div
+                                        class="progress-bar progress-bar-striped progress-bar-animated"
+                                        role="progressbar"
+                                        style="width: 100%"
+                                    ></div>
+                                </div>
+                                <p class="text-center text-muted">
+                                    Scoring resumes...
+                                </p>
+                            </div>
+
+                            <div id="scoringResults" style="height: 450px">
+                                <!-- Results will be populated here -->
+                                <div class="text-center text-muted py-5">
+                                    <i
+                                        class="fas fa-rectangle-list fa-3x mb-3"
+                                    ></i>
+                                    <p>
+                                        Upload resumes and set job requirement
+                                        to see scores of resumes
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                id="scoringResults"
+                                style="
+                                    display: none;
+                                    overflow-y: scroll;
+                                    max-height: 450px;
+                                "
+                            ></div>
+                            <div class="mt-2">
                                 <button
                                     type="button"
                                     id="analyzeButton"
-                                    class="btn btn-primary w-100"
+                                    class="btn btn-success w-100"
                                 >
-                                    <i class="fas fa-search me-2"></i>Step 3.
-                                    Analyze Resumes
+                                    <i class="fas fa-chart-bar me-2"></i>
+                                    Analyze Top Scoring Resume
                                 </button>
                             </div>
                         </div>
@@ -86,8 +172,8 @@
                 </div>
 
                 <!-- Right Section - Results -->
-                <div class="col-md-6 ps-md-2 mt-4 mt-md-0">
-                    <div class="card shadow-sm">
+                <div class="col-md-4 ps-md-2 mt-4 mt-md-0">
+                    <div class="card shadow-sm" style="min-height: 580px">
                         <div class="card-body">
                             <h4 class="card-title mb-4">
                                 <i class="fas fa-chart-bar me-2"></i>Analytics
@@ -107,13 +193,16 @@
                                 </p>
                             </div>
 
-                            <div id="matchResults">
+                            <div id="analysisResults" style="min-height: 450px">
                                 <!-- Results will be populated here -->
                                 <div class="text-center text-muted py-5">
-                                    <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                                    <i
+                                        class="fas fa-rectangle-list fa-3x mb-3"
+                                    ></i>
                                     <p>
-                                        Upload resumes and set job requirements
-                                        to see suitable resumes
+                                        Click 'Analyze Top Scoring Resume' to
+                                        see suitable resumes based on the job
+                                        requirement
                                     </p>
                                 </div>
                             </div>
@@ -126,6 +215,16 @@
                                     max-height: 474px;
                                 "
                             ></div>
+                            <div class="mt-2">
+                                <button
+                                    type="button"
+                                    id="endAnalysisButton"
+                                    class="btn btn-danger w-100"
+                                >
+                                    <i class="fas fa-chart-bar me-2"></i>
+                                    End Analysis
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,6 +240,9 @@
                 const resumeInput = document.getElementById("resumeInput");
                 const uploadedResumes =
                     document.getElementById("uploadedResumes");
+                const uploadedResumeCount = document.getElementById(
+                    "uploadedResumeCount"
+                );
 
                 // Handle drag and drop for job requirements
                 const jobDropZone = document.getElementById(
@@ -148,8 +250,13 @@
                 );
                 const jobInput = document.getElementById("jobInput");
                 const uploadedJob = document.getElementById("uploadedJob");
+                const uploadedJobFile =
+                    document.getElementById("uploadedJobFile");
 
+                const scoringButton = document.getElementById("scoringButton");
                 const analyzeButton = document.getElementById("analyzeButton");
+                const endAnalysisButton =
+                    document.getElementById("endAnalysisButton");
 
                 // Add drag and drop handlers for both zones
                 [resumeDropZone, jobDropZone].forEach((dropZone) => {
@@ -231,6 +338,8 @@
 
                 function handleResumeFiles(e) {
                     const files = [...e.target.files];
+                    uploadedResumes.innerHTML = "";
+                    uploadedResumeCount.innerHTML = `Uploaded resumes: 0`;
                     files.forEach((file) => {
                         const div = document.createElement("div");
                         div.className =
@@ -245,6 +354,7 @@
                         </button>
                     `;
                         uploadedResumes.appendChild(div);
+                        uploadedResumeCount.innerHTML = `No. of Uploaded resumes: ${uploadedResumes.children.length}`;
                     });
                 }
 
@@ -270,8 +380,8 @@
                     }
                 }
 
-                // Handle analyze button click
-                analyzeButton.addEventListener("click", function () {
+                // Handle scoring button click
+                scoringButton.addEventListener("click", function () {
                     const resumeFiles = Array.from(resumeInput.files);
                     const jobFile = jobInput.files[0];
 
@@ -286,11 +396,14 @@
                     }
 
                     // Show loading state
-                    analyzeButton.disabled = true;
-                    analyzeButton.innerHTML =
-                        '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
-                    $("#matchResults").hide();
+                    scoringButton.disabled = true;
+                    scoringButton.innerHTML =
+                        '<i class="fas fa-spinner fa-spin me-2"></i>Scoring';
+                    $("#scoringResults").hide();
                     $("#analysisProgress").removeClass("d-none");
+                    $("#analyzeButton").hide();
+                    $("#endAnalysisButton").show();
+                    analyzeButton.disabled = true;
 
                     const formData = new FormData();
 
@@ -302,8 +415,8 @@
                     // Add job description
                     formData.append("job_description", jobFile);
 
-                    // Send to server
-                    fetch("/resume-matcher/analyze", {
+                    // Score Resume - send to server
+                    fetch("/score-resume", {
                         method: "POST",
                         body: formData,
                         headers: {
@@ -319,38 +432,51 @@
                         .then((data) => {
                             if (data.success) {
                                 const results = data.data;
-                                $("#matchResults").hide();
-
+                                $("#scoringResults").hide();
+                                analyzeButton.disabled = false;
                                 // Update results section
                                 const resultsDiv =
-                                    document.getElementById("analysisResults");
+                                    document.getElementById("scoringResults");
+                                $("#analyzeButton").show();
                                 resultsDiv.innerHTML = `
-                            <div class="card shadow-sm mb-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">Resume Match Results</h5>
-                                    ${results.resumes
-                                        .map(
-                                            (resume, index) => `
-                                        <div class="resume-match mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <h6 class="mb-0">${resume.resume_name}</h6>
-                                                <span class="badge bg-primary">${resume.similarity}%</span>
-                                            </div>
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar"
-                                                     style="width: ${resume.similarity}%"
-                                                     aria-valuenow="${resume.similarity}"
-                                                     aria-valuemin="0"
-                                                     aria-valuemax="100">
-                                                </div>
-                                            </div>
+                                    <div class="card shadow-sm mb-3">
+                                        <div class="card-body" style="overflow: auto; max-height: 450px; min-height: 450px;">
+                                            ${results.resumes
+                                                .map(
+                                                    (resume, index) => `
+                                                    <div class="resume-match mb-3">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">${
+                                                                resume.filename
+                                                            }</h6>
+                                                            <span class="badge bg-primary">${(
+                                                                resume.similarity *
+                                                                100
+                                                            ).toFixed(
+                                                                2
+                                                            )}%</span>
+                                                        </div>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" role="progressbar"
+                                                                style="width: ${(
+                                                                    resume.similarity *
+                                                                    100
+                                                                ).toFixed(2)}%"
+                                                                aria-valuenow="${(
+                                                                    resume.similarity *
+                                                                    100
+                                                                ).toFixed(2)}"
+                                                                aria-valuemin="0"
+                                                                aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `
+                                                )
+                                                .join("")}
                                         </div>
-                                    `
-                                        )
-                                        .join("")}
-                                </div>
-                            </div>
-                        `;
+                                    </div>
+                                `;
 
                                 // Show results section
                                 resultsDiv.style.display = "block";
@@ -366,9 +492,9 @@
                         })
                         .finally(() => {
                             // Reset button state
-                            analyzeButton.disabled = false;
-                            analyzeButton.innerHTML =
-                                '<i class="fas fa-search me-2"></i>Step 3. Analyze Resumes';
+                            scoringButton.disabled = true;
+                            scoringButton.innerHTML =
+                                '<i class="fas fa-half-star-stroke me-2"></i>Analyze Resumes';
                             $("#analysisProgress").addClass("d-none");
                         });
                 });
