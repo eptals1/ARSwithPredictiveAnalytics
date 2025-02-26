@@ -2,7 +2,10 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
+from utilities.text_extraction import extract_text_from_file
 from utilities.RoBERTa_NER import calculate_resume_similarities    
+from utilities.XGBoost import analyze_resumes
+
 # from utilities.XGBoost import predict_job_fit
 
 """     
@@ -41,7 +44,7 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
-@app.route('/score-resume', methods=['POST'])
+@app.route('/score-resume-using-ner', methods=['POST'])
 def score_resume():
     try:
         # Check if job description is uploaded
@@ -104,6 +107,16 @@ def score_resume():
         }
 
         return jsonify(analysis_result)
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/analyze-resume-using-xgboost', methods=['POST'])
+def analyze_resume():
+    try:
+        results = analyze_resumes()
+        return jsonify({'success': True, 'results': results})
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
