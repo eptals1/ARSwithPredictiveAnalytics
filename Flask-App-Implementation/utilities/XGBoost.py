@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
-from utilities.text_extraction import extract_text_from_file  # You need a text extraction function
+from text_extraction import extract_text_from_file  # You need a text extraction function
 from werkzeug.utils import secure_filename
 
 # Load the trained XGBoost model
