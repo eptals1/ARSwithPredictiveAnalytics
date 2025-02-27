@@ -3,6 +3,7 @@ from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
 from utilities.RoBERTa import calculate_resume_similarities    
+# from utilities.xgboost_model import predict_xgboost_score    
 
 """     
 app
