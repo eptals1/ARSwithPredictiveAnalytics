@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
 import os
-from utilities.RoBERTa_NER import calculate_resume_similarities    
+from utilities.RoBERTa import calculate_resume_similarities    
 
 """     
 app
