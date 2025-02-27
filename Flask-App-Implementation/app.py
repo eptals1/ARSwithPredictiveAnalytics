@@ -75,12 +75,6 @@ def score_resume():
         # Calculate similarities using utils.py function
         similarities = calculate_resume_similarities(job_path, resume_paths)
 
-        # Calculate entities using utils.py function
-        # for resume_path in resume_paths:
-        #     resume_text = extract_text_from_file(resume_path)
-        #     entities = recognize_entities_for_each_resume(resume_text)
-        #     match_score = calculate_match_score(resume_text, entities)
-
         # Clean up uploaded files
         try:
             os.remove(job_path)
@@ -95,7 +89,6 @@ def score_resume():
             'success': True,
             'data': {
                 'resumes': similarities,
-                #'entities': entities,
                 'similarity_score': similarities[0]['similarity'] if similarities else 0,  # Best match score
                 # 'matching_skills': [match_score['matching_skills']],  # We don't have skill extraction in utils.py yet
                 # 'missing_skills': [match_score['missing_skills']],    # We don't have skill extraction in utils.py yet
