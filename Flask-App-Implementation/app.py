@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 import os
 from utilities.text_extraction import extract_text_from_file
 from utilities.RoBERTa import calculate_resume_similarities    
-from utilities.XGBoost import analyze_resumes
+# from utilities.XGBoost import analyze_resumes
 
 # from utilities.XGBoost import predict_job_fit
 
@@ -112,14 +112,14 @@ def score_resume():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/analyze-resume-using-xgboost', methods=['POST'])
-def analyze_resume():
-    try:
-        results = analyze_resumes()
-        return jsonify({'success': True, 'results': results})
+# @app.route('/analyze-resume-using-xgboost', methods=['POST'])
+# def analyze_resume():
+#     try:
+#         results = analyze_resumes()
+#         return jsonify({'success': True, 'results': results})
 
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+#     except Exception as e:
+#         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
