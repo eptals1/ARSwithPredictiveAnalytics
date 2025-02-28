@@ -10,3 +10,4 @@ __pycache__
 *.pt
 *.pth
 *.bin
+train_args
