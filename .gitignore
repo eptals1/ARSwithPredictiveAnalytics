@@ -1,11 +1,6 @@
 .venv
-dataset
-workflow
-output
 uploads
 __pycache__
-ARS-dataset
-temps
 *.docx
 *.pdf
 *.jpg
