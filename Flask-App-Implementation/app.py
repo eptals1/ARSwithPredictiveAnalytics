@@ -49,10 +49,10 @@ def score_resumes():
 
         resume_text = preprocess_text(resume_text)
         jaccard_score_value, common_words = calculate_jaccard_similarity(job_text, resume_text)
-        rank_score = np.random.uniform(0.1, 0.9)  # Placeholder for actual rank score
-        final_score = (jaccard_score_value + rank_score) / 2  # Averaging both scores
-
-        classification = "Suitable" if final_score > 0.50 else "Not Suitable"
+        # rank_score = np.random.uniform(0.1, 0.9)  # Placeholder for actual rank score
+        # final_score = (jaccard_score_value + rank_score) / 2  # Averaging both scores
+        final_score = jaccard_score_value
+        classification = "Suitable" if jaccard_score_value > 0.50 else "Not Suitable"
 
         print(f"Processed: {resume_file.filename} | Score: {final_score}")  # Debugging print
 

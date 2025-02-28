@@ -6,6 +6,8 @@ uploads
 __pycache__
 ARS-dataset
 temps
-
 *.docx
-
+*.pdf
+*.jpg
+*.jpeg
+*.png
