@@ -9,7 +9,7 @@ def process_files(resume_folder, output_csv):
     for filename in os.listdir(resume_folder):
         file_path = os.path.join(resume_folder, filename)
         if os.path.isfile(file_path) and file_path.endswith((".pdf", ".docx", ".jpg", ".jpeg", ".png")):
-            print(f"Extracting text from: {filename}")
+            print(f"Extracting text from resume: {filename}")
             text = extract_text(file_path)
             if text:
                 data.append({"Filename": filename, "Extracted Text": text})
