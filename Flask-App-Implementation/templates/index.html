@@ -115,7 +115,7 @@
                     </div>
                 </div>
 
-                <!-- Right Section - Results -->
+                <!-- Middle Section - Results -->
                 <div class="col-md-6 ps-md-2 mt-4 mt-md-0">
                     <div class="card shadow-sm" style="min-height: 580px">
                         <div class="card-body">
@@ -136,7 +136,7 @@
                                 </p>
                             </div>
 
-                            <div id="scoringResults" style="height: 450px">
+                            <div id="resultsDiv" style="height: 450px">
                                 <!-- Results will be populated here -->
                                 <div class="text-center text-muted py-5">
                                     <i class="fas fa-chart-bar fa-3x mb-3"></i>
@@ -148,27 +148,11 @@
                             </div>
                             <div
                                 id="scoringResults"
-                                style="
-                                    display: none;
-                                    overflow-y: scroll;
-                                    max-height: 450px;
-                                "
+                                style="display: none; max-height: 450px"
                             ></div>
-                            <!-- <div class="mt-2">
-                                <button
-                                    type="button"
-                                    id="analyzeButton"
-                                    class="btn btn-success w-100"
-                                >
-                                    <i class="fas fa-chart-bar me-2"></i>
-                                    
-                                </button>
-                            </div> -->
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
         <script src="/static/js/jquery-3.6.0.js"></script>
         <script src="/static/js/bootstrap-5.3.0.bundle.min.js"></script>
@@ -282,22 +266,74 @@
                     resumeInput.click();
                 });
 
-                jobRequirementUpload.addEventListener("click", function () {
-                    jobInput.click();
-                });
-            });
+                // Job requirements upload handlers
+                jobDropZone.addEventListener("drop", handleJobDrop, false);
+                jobDropZone.addEventListener("click", () => jobInput.click());
+                jobInput.addEventListener("change", handleJobFiles);
 
-            document.addEventListener("DOMContentLoaded", function () {
-                const scoringButton = document.getElementById("scoringButton");
-                const analyzeButton = document.getElementById("analyzeButton");
-                const resumeInput = document.getElementById("resumeInput");
-                const jobInput = document.getElementById("jobInput");
-                const scoringResults =
-                    document.getElementById("scoringResults");
-                const analysisResults =
-                    document.getElementById("analysisResults");
-                const analysisProgress = $("#analysisProgress");
+                function handleResumeDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleResumeFiles({
+                        target: {
+                            files: files,
+                        },
+                    });
+                }
 
+                function handleJobDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleJobFiles({
+                        target: {
+                            files: files,
+                        },
+                    });
+                }
+
+                function handleResumeFiles(e) {
+                    const files = [...e.target.files];
+                    files.forEach((file) => {
+                        const div = document.createElement("div");
+                        div.className =
+                            "resume-item d-flex justify-content-between align-items-center";
+                        div.innerHTML = `
+                                        <div>
+                                            <i class="fas fa-file-pdf me-2"></i>
+                                            ${file.name}
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    `;
+                        uploadedResumes.appendChild(div);
+                        uploadedResumeCount.innerHTML = `No. of Uploaded resumes: ${uploadedResumes.children.length}`;
+                    });
+                }
+
+                function handleJobFiles(e) {
+                    const files = [...e.target.files];
+                    if (files.length > 0) {
+                        // Only show the last uploaded file
+                        uploadedJob.innerHTML = "";
+                        const file = files[0];
+                        const div = document.createElement("div");
+                        div.className =
+                            "resume-item d-flex justify-content-between align-items-center";
+                        div.innerHTML = `
+                                <div>
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    ${file.name}
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
+                        uploadedJob.appendChild(div);
+                    }
+                }
+
+                // Handle scoring button click
                 scoringButton.addEventListener("click", function () {
                     if (!jobInput.files.length || !resumeInput.files.length) {
                         alert(
@@ -323,122 +359,67 @@
                     })
                         .then((response) => response.json())
                         .then((data) => {
-                            if (!data || !data.scores) {
-                                alert("Error: No scores received.");
-                                return;
-                            }
-                            scoringButton.innerHTML =
-                                '<i class="fas fa-chart-bar me-2"></i> Analyze Resumes';
-                            analysisProgress.addClass("d-none");
-                            const resumes = data.scores;
-                            const resultsDiv =
-                                document.getElementById("scoringResults");
-                            resultsDiv.innerHTML = `
-                        <div class="card shadow-sm mb-3">
-                            <div class="card-body" style="overflow: auto; max-height: 450px; min-height: 450px;">
-                                ${resumes
-                                    .map(
-                                        (resume) => `
-                                        <div class="resume-match mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <h6 class="mb-0">${
-                                                    resume.resume
-                                                }</h6>
-                                                <span class="badge ${
-                                                    resume.classification ===
-                                                    "Suitable"
-                                                        ? "bg-success"
-                                                        : "bg-danger"
-                                                }">${
-                                            resume.classification
-                                        }</span>
-                                            </div>
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar"
-                                                    style="width: ${(
-                                                        resume.score * 100
-                                                    ).toFixed(2)}%"
-                                                    aria-valuenow="${(
-                                                        resume.score * 100
-                                                    ).toFixed(2)}"
-                                                    aria-valuemin="0"
-                                                    aria-valuemax="100">
-                                                    ${(
-                                                        resume.score * 100
-                                                    ).toFixed(2)}%
-                                                </div>
-                                            </div>
+                            if (data.success) {
+                                console.log("API Response:", data);
+                                // Extract resumes safely
+                                let resumes = data.data.resumes || [];
+
+                                let resultsContainer =
+                                    document.getElementById("resultsDiv");
+                                resultsContainer.innerHTML = `
+                                    <div class="card shadow-sm mb-3">
+                                        <div class="card-body" style="overflow: auto; max-height: 450px; min-height: 450px;">
+                                            ${
+                                                resumes.length > 0
+                                                    ? resumes
+                                                          .map(
+                                                              (resume) => `
+                                                    <div class="resume-match mb-3">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">${
+                                                                resume.filename
+                                                            }</h6>
+                                                            <p>🔍 Score: <b>${(
+                                                                resume.similarity *
+                                                                100
+                                                            ).toFixed(
+                                                                2
+                                                            )}%</b></p>
+                                                        </div>
+                                                        <p>📌 Skills Words: ${resume.intersecting_words.join(
+                                                            ", "
+                                                        )}</p>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" role="progressbar"
+                                                                style="width: ${(
+                                                                    resume.similarity *
+                                                                    100
+                                                                ).toFixed(2)}%"
+                                                                aria-valuemin="0"
+                                                                aria-valuemax="100">
+                                                                ${(
+                                                                    resume.similarity *
+                                                                    100
+                                                                ).toFixed(2)}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    `
+                                                          )
+                                                          .join("")
+                                                    : "<p>No resumes found</p>"
+                                            }
                                         </div>
-                                    `
-                                    )
-                                    .join("")}
-                            </div>
-                        </div>
-                    `;
-                            // Show results section
-                            resultsDiv.style.display = "block";
+                                    </div>
+                                `;
+                            } else {
+                                alert("Error: " + data.message);
+                            }
                         })
-                        .catch((error) => console.error("Error:", error));
-                });
-
-                analyzeButton.addEventListener("click", function () {
-                    let rejectedResumes = [];
-                    for (let file of resumeInput.files) {
-                        let scoreElement = document.getElementById(
-                            `score-${file.name}`
+                        .catch((error) =>
+                            console.error("Error fetching data:", error)
                         );
-                        if (
-                            scoreElement &&
-                            parseFloat(scoreElement.textContent) < 0.5
-                        ) {
-                            rejectedResumes.push(file);
-                        }
-                    }
-
-                    if (rejectedResumes.length === 0) {
-                        alert("No rejected resumes to analyze.");
-                        return;
-                    }
-
-                    let formData = new FormData();
-                    rejectedResumes.forEach((file) =>
-                        formData.append("rejected_resumes", file)
-                    );
-
-                    fetch("/analyze-rejected", {
-                        method: "POST",
-                        body: formData,
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            displayAnalysis(data);
-                        })
-                        .catch((error) => console.error("Error:", error));
                 });
-
-                function displayScores(scores) {
-                    scoringResults.innerHTML = scores.length
-                        ? scores
-                              .map(
-                                  (score) =>
-                                      `<div>${score.resume}: <span id='score-${
-                                          score.resume
-                                      }'>${score.score.toFixed(2)}</span></div>`
-                              )
-                              .join("")
-                        : "<p class='text-muted text-center'>No scores available.</p>";
-                }
-
-                function displayAnalysis(analysis) {
-                    analysisResults.innerHTML = analysis.length
-                        ? analysis
-                              .map(
-                                  (item) =>
-                                      `<div>${item.resume}: Suggested Job - ${item.suggested_job}</div>`
-                              )
-                              .join("")
-                        : "<p class='text-muted text-center'>No job suggestions available.</p>";
-                }
             });
         </script>
     </body>

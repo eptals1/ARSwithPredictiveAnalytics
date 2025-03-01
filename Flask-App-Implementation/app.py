@@ -1,93 +1,74 @@
-from flask import Flask, render_template, request, jsonify
-import numpy as np
-import xgboost as xgb
-from utilities.pre_processing import preprocess_text
-from utilities.jaccard_xgboost_ranking import calculate_jaccard_similarity
+import os
+from flask import Flask, request, jsonify, render_template
+from werkzeug.utils import secure_filename
 from utilities.text_extraction import extract_text
-import numpy as np
-import joblib
-from scipy.sparse import hstack
+from utilities.pre_processing import preprocess_text
+from utilities.jaccard_similarity_scoring import calculate_resume_similarities
 
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the directory exists
 
 app = Flask(__name__)
 
-#--------------------------
-# Homepage
-#--------------------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
-#--------------------------</>
-# Resume Scoring
-#--------------------------</>
-# Load the XGBoost model
-classifier_model = xgb.Booster()
-classifier_model.load_model("Data-Training/models/xgboost_resume_classifier.json")
-
-# Load the saved TF-IDF vectorizer
-vectorizer = joblib.load("Data-Training/models/tfidf_vectorizer.pkl")
-
-@app.route("/score-resumes", methods=["POST"])
-def score_resumes():
+@app.route("/score-resume-using-ner", methods=["POST"])
+def score_resume_using_ner():
     try:
+        print("\n📝 Received request!")
 
-        job_file = request.files.get("job_description")
-        resumes = request.files.getlist("resumes")
+        if "job_description" not in request.files or "resumes[]" not in request.files:
+            return jsonify({"success": False, "message": "Missing files"}), 400
 
-        if not job_file or not resumes:
-            return jsonify({"error": "Missing job description or resumes"}), 400
+        job_file = request.files["job_description"]
+        resume_files = request.files.getlist("resumes[]")
 
-        # Extract & preprocess job description text
-        job_text = extract_text(job_file)
-        if not job_text:
-            return jsonify({"error": "Could not extract text from job description"}), 400
-        job_text = preprocess_text(job_text)
+        print(f"📂 Job File: {job_file.filename}")
+        print(f"📂 Received {len(resume_files)} resumes")
 
-        scores = []
+        if not job_file or not resume_files:
+            return jsonify({"success": False, "message": "Invalid file uploads"}), 400
 
-        for resume_file in resumes:
-            resume_text = extract_text(resume_file)
-            if not resume_text:
-                jsonify({"error": "Could not extract text from resume"})
-                print(f"Skipping {resume_file.filename}: Could not extract text")  # Debugging print
-                # continue  # Skip if text extraction fails
+        # ✅ Save job file temporarily
+        job_filename = secure_filename(job_file.filename)
+        job_path = os.path.join(UPLOAD_FOLDER, job_filename)
+        job_file.save(job_path)
 
-            resume_text = preprocess_text(resume_text)
+        print(f"✅ Job file saved at: {job_path}")
 
-            # Convert job and resume into TF-IDF features
-            job_tfidf = vectorizer.transform([job_text])
-            resume_tfidf = vectorizer.transform([resume_text])
+        # ✅ Save all resume files temporarily
+        resume_paths = []
+        for resume_file in resume_files:
+            resume_filename = secure_filename(resume_file.filename)
+            resume_path = os.path.join(UPLOAD_FOLDER, resume_filename)
+            resume_file.save(resume_path)
+            resume_paths.append(resume_path)
 
-            # Combine job & resume features (horizontally stacked)
-            feature_input = hstack([job_tfidf, resume_tfidf])
+            print(f"✅ Resume saved at: {resume_path}")
 
-            # Convert to DMatrix for XGBoost
-            dmatrix = xgb.DMatrix(feature_input)
+        # 🟢 Call function using file paths (NOT preprocessed text)
+        results_dict = calculate_resume_similarities(job_path, resume_paths)
 
-            # Predict suitability using XGBoost
-            prediction = classifier_model.predict(dmatrix)
-            classification = "Suitable" if prediction[0] > 0.05 else "Not Suitable"
+        # Extract comparisons from results
+        results = results_dict.get("resume_comparisons", [])
 
-            print(f"Processed: {resume_file.filename} | XGBoost Prediction: {classification}")  # Debugging print
+        # ✅ Cleanup: Delete files after processing
+        if os.path.exists(job_path):
+            os.remove(job_path)
 
-            scores.append({
-                "resume": resume_file.filename,
-                "classification": classification,
-                "probability": float(prediction[0])  # Convert numpy float to Python float
-            })
+        for resume_path in resume_paths:
+            if os.path.exists(resume_path):
+                os.remove(resume_path)
 
-        if not scores:
-            print("Error: No resumes processed")  # Debugging print
-            return jsonify({"error": "No resumes processed"}), 400
+        return jsonify({"success": True, "data": {"resumes": results}})
 
-        return jsonify({"success": True, "scores": scores})
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        print("🔥 ERROR:", str(e))
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"success": False, "message": "Internal Server Error"}), 500
 
-#------------------------------------------------
-# Resume Analyzer
-#------------------------------------------------
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
