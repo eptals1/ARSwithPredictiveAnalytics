@@ -123,7 +123,6 @@
                                 <i class="fas fa-chart-line me-2"></i>
                                 Resume Analysis
                             </h4>
-
                             <div id="analysisProgress" class="d-none">
                                 <div class="progress mb-3">
                                     <div
@@ -133,7 +132,7 @@
                                     ></div>
                                 </div>
                                 <p class="text-center text-muted">
-                                    Scoring resumes...
+                                    Analyzing resumes...
                                 </p>
                             </div>
 
@@ -162,22 +161,88 @@
         <script src="./static/js/jquery-3.6.0.js"></script>
         <script src="./static/js/bootstrap-5.3.0.bundle.min.js"></script>
         <script>
-            $(document).ready(function () {
-                // Handle drag and drop for resumes
-                const resumeDropZone = document.getElementById("resumeUpload");
+            document.addEventListener("DOMContentLoaded", function () {
+                function handleFileUpload(
+                    inputElement,
+                    displayElement,
+                    countElement
+                ) {
+                    inputElement.addEventListener("change", function (event) {
+                        const files = event.target.files;
+                        updateFileDisplay(files, displayElement, countElement);
+                    });
+                }
+
+                function handleDragDrop(
+                    dropArea,
+                    inputElement,
+                    displayElement,
+                    countElement
+                ) {
+                    dropArea.addEventListener("dragover", function (event) {
+                        event.preventDefault();
+                        dropArea.classList.add("drag-over");
+                    });
+
+                    dropArea.addEventListener("dragleave", function () {
+                        dropArea.classList.remove("drag-over");
+                    });
+
+                    dropArea.addEventListener("drop", function (event) {
+                        event.preventDefault();
+                        dropArea.classList.remove("drag-over");
+
+                        const files = event.dataTransfer.files;
+                        if (inputElement.files.length > 0) {
+                            return; // Prevent overwriting existing file selections
+                        }
+
+                        const dataTransfer = new DataTransfer();
+                        for (let file of files) {
+                            dataTransfer.items.add(file);
+                        }
+                        inputElement.files = dataTransfer.files;
+                        inputElement.dispatchEvent(new Event("change")); // Ensure UI updates
+                    });
+                }
+
+                function updateFileDisplay(
+                    files,
+                    displayElement,
+                    countElement
+                ) {
+                    displayElement.innerHTML = "";
+                    if (files.length === 0) {
+                        displayElement.innerHTML =
+                            "<span class='text-muted'>No files uploaded</span>";
+                        if (countElement)
+                            countElement.textContent =
+                                "No. of Resumes uploaded: 0";
+                        return;
+                    }
+
+                    if (countElement)
+                        countElement.textContent = `No. of Resumes uploaded: ${files.length}`;
+                    for (let file of files) {
+                        let fileItem = document.createElement("p");
+                        fileItem.textContent = file.name;
+                        fileItem.classList.add("small", "text-muted");
+                        displayElement.appendChild(fileItem);
+                    }
+                }
+
                 const resumeInput = document.getElementById("resumeInput");
+                const resumeUpload = document.getElementById("resumeUpload");
                 const uploadedResumes =
                     document.getElementById("uploadedResumes");
                 const uploadedResumeCount = document.getElementById(
                     "uploadedResumeCount"
                 );
 
-                // Handle drag and drop for job requirements
-                const jobDropZone = document.getElementById(
+                const jobInput = document.getElementById("jobInput");
+                const jobRequirementUpload = document.getElementById(
                     "jobRequirementUpload"
                 );
-                const jobInput = document.getElementById("jobInput");
-                const uploadedJob = document.getElementById("uploadedJob");
                 const uploadedJobFile =
                     document.getElementById("uploadedJobFile");
 
@@ -309,20 +374,12 @@
 
                 // Handle scoring button click
                 scoringButton.addEventListener("click", function () {
-                    const resumeFiles = Array.from(resumeInput.files);
-                    const jobFile = jobInput.files[0];
-
-                    if (resumeFiles.length === 0) {
-                        alert("Please upload at least one resume");
+                    if (!jobInput.files.length || !resumeInput.files.length) {
+                        alert(
+                            "Please upload resumes and a job description first."
+                        );
                         return;
                     }
-
-                    if (!jobFile) {
-                        alert("Please upload a job description");
-                        return;
-                    }
-
-                    // Show loading state
                     scoringButton.disabled = true;
                     scoringButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Scoring';
                     resultsDiv = document.getElementById("resultsDiv");
@@ -332,18 +389,13 @@
                     // $("#endAnalysisButton").show();
                     // analyzeButton.disabled = true;
 
-                    const formData = new FormData();
+                    let formData = new FormData();
+                    formData.append("job_description", jobInput.files[0]); // Send actual job file
+                    for (let file of resumeInput.files) {
+                        formData.append("resumes", file); // Send actual resumes
+                    }
 
-                    // Add resumes
-                    resumeFiles.forEach((file, index) => {
-                        formData.append(`resumes[]`, file);
-                    });
-
-                    // Add job description
-                    formData.append("job_description", jobFile);
-
-                    // Score Resume - send to server
-                    fetch("/score-resume-using-ner", {
+                    fetch("/score-resumes", {
                         method: "POST",
                         body: formData,
                     })
