@@ -1,71 +1,40 @@
-import os
-import re
+import string
 import nltk
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import PyPDF2
-import docx
+import inflect
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 # Download required NLTK data
-# try:
-#     nltk.data.find('tokenizers/punkt')
-#     nltk.data.find('corpora/stopwords')
-#     nltk.data.find('corpora/wordnet')
-# except LookupError:
-#     nltk.download('punkt')
-#     nltk.download('stopwords')
-#     nltk.download('wordnet')
+nltk.download("punkt")
+nltk.download("wordnet")
 
-def extract_text_from_pdf(pdf_path):
-    """Extract text from PDF file"""
-    text = ""
-    try:
-        with open(pdf_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            for page in pdf_reader.pages:
-                text += page.extract_text()
-    except Exception as e:
-        print(f"Error reading PDF {pdf_path}: {str(e)}")
-    return text
+# Initialize lemmatizer & inflect engine for number conversion
+lemmatizer = WordNetLemmatizer()
+inflect_engine = inflect.engine()
 
-def extract_text_from_docx(docx_path):
-    """Extract text from DOCX file"""
-    text = ""
-    try:
-        doc = docx.Document(docx_path)
-        for paragraph in doc.paragraphs:
-            text += paragraph.text + "\n"
-    except Exception as e:
-        print(f"Error reading DOCX {docx_path}: {str(e)}")
-    return text
-
-def extract_text_from_file(file_path):
-    """Extract text from PDF or DOCX file"""
-    if file_path.lower().endswith('.pdf'):
-        return extract_text_from_pdf(file_path)
-    elif file_path.lower().endswith(('.docx', '.doc')):
-        return extract_text_from_docx(file_path)
-    return ""
+def convert_numbers_to_words(text):
+    """Convert numeric digits in text to words (e.g., '3' → 'three')."""
+    words = text.split()
+    converted_words = []
+    
+    for word in words:
+        if word.isdigit():  # Check if it's a number
+            word = inflect_engine.number_to_words(int(word))  # Convert number to words
+        converted_words.append(word)
+    
+    return " ".join(converted_words)
 
 def preprocess_text(text):
-    """Preprocess text by tokenizing, removing stopwords, and lemmatizing"""
-    # Convert to lowercase
-    text = text.lower()
+    """Preprocess text: lowercase, remove punctuation, lemmatize, and normalize numbers."""
+    text = text.lower()  # Convert to lowercase
+    text = convert_numbers_to_words(text)  # Convert numbers to words
+    text = text.translate(str.maketrans("", "", string.punctuation))  # Remove punctuation
+    words = word_tokenize(text)  # Tokenize into words
+
+    # Lemmatization & stopword removal
+    processed_words = [
+        lemmatizer.lemmatize(word) for word in words if word not in ENGLISH_STOP_WORDS
+    ]
     
-    # Remove special characters and digits
-    text = re.sub(r'[^\w\s]', '', text)
-    text = re.sub(r'\d+', '', text)
-    
-    # Tokenize
-    tokens = word_tokenize(text)
-    
-    # Remove stopwords
-    stop_words = set(stopwords.words('english'))
-    tokens = [token for token in tokens if token not in stop_words]
-    
-    # Lemmatize
-    lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    
-    return tokens
+    return " ".join(processed_words)  # Return as a string, not a set

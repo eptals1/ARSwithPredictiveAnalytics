@@ -15,7 +15,7 @@
 
             <div class="row">
                 <!-- Left Section - Upload and Requirements -->
-                <div class="col-md-4 pe-md-2">
+                <div class="col-md-6 pe-md-2">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title mb-2">
@@ -116,7 +116,7 @@
                 </div>
 
                 <!-- Middle Section - Results -->
-                <div class="col-md-4 ps-md-2 mt-4 mt-md-0">
+                <div class="col-md-6 ps-md-2 mt-4 mt-md-0">
                     <div class="card shadow-sm" style="min-height: 580px">
                         <div class="card-body">
                             <h4 class="card-title mb-4">
@@ -137,7 +137,7 @@
                                 </p>
                             </div>
 
-                            <div id="scoringResults" style="height: 450px">
+                            <div id="resultsDiv" style="height: 450px">
                                 <!-- Results will be populated here -->
                                 <div class="text-center text-muted py-5">
                                     <i
@@ -151,85 +151,11 @@
                             </div>
                             <div
                                 id="scoringResults"
-                                style="
-                                    display: none;
-                                    overflow-y: scroll;
-                                    max-height: 450px;
-                                "
+                                style="display: none; max-height: 450px"
                             ></div>
-                            <div class="mt-2">
-                                <button
-                                    type="button"
-                                    id="analyzeButton"
-                                    class="btn btn-success w-100"
-                                >
-                                    <i class="fas fa-chart-bar me-2"></i>
-                                    Analyze Top Scoring Resume
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Right Section - Results -->
-                <div class="col-md-4 ps-md-2 mt-4 mt-md-0">
-                    <div class="card shadow-sm" style="min-height: 580px">
-                        <div class="card-body">
-                            <h4 class="card-title mb-4">
-                                <i class="fas fa-chart-bar me-2"></i>Analytics
-                                Result
-                            </h4>
-
-                            <div id="analysisProgress" class="d-none">
-                                <div class="progress mb-3">
-                                    <div
-                                        class="progress-bar progress-bar-striped progress-bar-animated"
-                                        role="progressbar"
-                                        style="width: 100%"
-                                    ></div>
-                                </div>
-                                <p class="text-center text-muted">
-                                    Analyzing resumes...
-                                </p>
-                            </div>
-
-                            <div id="analysisResults" style="min-height: 450px">
-                                <!-- Results will be populated here -->
-                                <div class="text-center text-muted py-5">
-                                    <i
-                                        class="fas fa-rectangle-list fa-3x mb-3"
-                                    ></i>
-                                    <p>
-                                        Click 'Analyze Top Scoring Resume' to
-                                        see suitable resumes based on the job
-                                        requirement
-                                    </p>
-                                </div>
-                            </div>
-                            <div
-                                id="analysisResults"
-                                style="
-                                    display: none;
-                                    overflow-y: scroll;
-                                    overflow-x: hidden;
-                                    max-height: 474px;
-                                "
-                            ></div>
-                            <div class="mt-2">
-                                <button
-                                    type="button"
-                                    id="endAnalysisButton"
-                                    class="btn btn-danger w-100"
-                                >
-                                    <i class="fas fa-chart-bar me-2"></i>
-                                    End Analysis
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <script src="/static/js/jquery-3.6.0.js"></script>
         <script src="/static/js/bootstrap-5.3.0.bundle.min.js"></script>
@@ -343,14 +269,14 @@
                         div.className =
                             "resume-item d-flex justify-content-between align-items-center";
                         div.innerHTML = `
-                                <div>
-                                    <i class="fas fa-file-pdf me-2"></i>
-                                    ${file.name}
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            `;
+                                        <div>
+                                            <i class="fas fa-file-pdf me-2"></i>
+                                            ${file.name}
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    `;
                         uploadedResumes.appendChild(div);
                         uploadedResumeCount.innerHTML = `No. of Uploaded resumes: ${uploadedResumes.children.length}`;
                     });
@@ -366,14 +292,14 @@
                         div.className =
                             "resume-item d-flex justify-content-between align-items-center";
                         div.innerHTML = `
-                        <div>
-                            <i class="fas fa-file-pdf me-2"></i>
-                            ${file.name}
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
+                                <div>
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    ${file.name}
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
                         uploadedJob.appendChild(div);
                     }
                 }
@@ -417,91 +343,69 @@
                     fetch("/score-resume-using-ner", {
                         method: "POST",
                         body: formData,
-                        headers: {
-                            "X-CSRFToken": "{{ csrf_token() }}",
-                        },
                     })
-                        .then((response) => {
-                            if (!response.ok) {
-                                throw new Error("Network response was not ok");
-                            }
-                            return response.json();
-                        })
+                        .then((response) => response.json())
                         .then((data) => {
                             if (data.success) {
-                                const results = data.data;
-                                $("#scoringResults").hide();
-                                analyzeButton.disabled = false;
+                                console.log("API Response:", data);
+                                // Extract resumes safely
+                                let resumes = data.data.resumes || [];
 
-                                const resultsDiv =
-                                    document.getElementById("scoringResults");
-                                $("#analyzeButton").show();
-
-                                resultsDiv.innerHTML = `
+                                let resultsContainer =
+                                    document.getElementById("resultsDiv");
+                                resultsContainer.innerHTML = `
                                     <div class="card shadow-sm mb-3">
                                         <div class="card-body" style="overflow: auto; max-height: 450px; min-height: 450px;">
-                                            ${results.resumes
-                                                .map(
-                                                    (resume, index) => `
+                                            ${
+                                                resumes.length > 0
+                                                    ? resumes
+                                                          .map(
+                                                              (resume) => `
                                                     <div class="resume-match mb-3">
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <h6 class="mb-0">${
                                                                 resume.filename
                                                             }</h6>
-                                                            <span class="badge bg-primary">${(
+                                                            <p>🔍 Score: <b>${(
                                                                 resume.similarity *
                                                                 100
                                                             ).toFixed(
                                                                 2
-                                                            )}%</span>
+                                                            )}%</b></p>
                                                         </div>
+                                                        <p>📌 Skills Words: ${resume.intersecting_words.join(
+                                                            ", "
+                                                        )}</p>
                                                         <div class="progress">
                                                             <div class="progress-bar" role="progressbar"
                                                                 style="width: ${(
                                                                     resume.similarity *
                                                                     100
                                                                 ).toFixed(2)}%"
-                                                                aria-valuenow="${(
-                                                                    resume.similarity *
-                                                                    100
-                                                                ).toFixed(2)}"
                                                                 aria-valuemin="0"
                                                                 aria-valuemax="100">
+                                                                ${(
+                                                                    resume.similarity *
+                                                                    100
+                                                                ).toFixed(2)}%
                                                             </div>
                                                         </div>
-                                                        <div class="mt-2">
-                                                            <strong>Matched Entities:</strong> ${resume.intersecting_entities.join(
-                                                                ", "
-                                                            )}
-                                                        </div>
                                                     </div>
-                                                `
-                                                )
-                                                .join("")}
+                                                    `
+                                                          )
+                                                          .join("")
+                                                    : "<p>No resumes found</p>"
+                                            }
                                         </div>
                                     </div>
                                 `;
-
-                                // Show results section
-                                resultsDiv.style.display = "block";
                             } else {
-                                throw new Error(
-                                    data.message || "Analysis failed"
-                                );
+                                alert("Error: " + data.message);
                             }
                         })
-
-                        .catch((error) => {
-                            console.error("Error:", error);
-                            alert("Error analyzing resumes: " + error.message);
-                        })
-                        .finally(() => {
-                            // Reset button state
-                            scoringButton.disabled = true;
-                            scoringButton.innerHTML =
-                                '<i class="fas fa-half-star-stroke me-2"></i>Analyze Resumes';
-                            $("#analysisProgress").addClass("d-none");
-                        });
+                        .catch((error) =>
+                            console.error("Error fetching data:", error)
+                        );
                 });
             });
         </script>
