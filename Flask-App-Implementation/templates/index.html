@@ -180,7 +180,7 @@
                     document.getElementById("uploadedJobFile");
 
                 const scoringButton = document.getElementById("scoringButton");
-                const analyzeButton = document.getElementById("analyzeButton");
+                // const analyzeButton = document.getElementById("analyzeButton");
                 const endAnalysisButton =
                     document.getElementById("endAnalysisButton");
 
@@ -325,9 +325,9 @@
                         '<i class="fas fa-spinner fa-spin me-2"></i>Scoring';
                     $("#scoringResults").hide();
                     $("#analysisProgress").removeClass("d-none");
-                    $("#analyzeButton").hide();
+                    // $("#analyzeButton").hide();
                     $("#endAnalysisButton").show();
-                    analyzeButton.disabled = true;
+                    // analyzeButton.disabled = true;
 
                     const formData = new FormData();
 
@@ -373,7 +373,7 @@
                                                                 2
                                                             )}%</b></p>
                                                         </div>
-                                                        <p>📌 Skills Words: ${resume.intersecting_words.join(
+                                                        <p>📌 Similar Words: ${resume.intersecting_words.join(
                                                             ", "
                                                         )}</p>
                                                         <div class="progress">
