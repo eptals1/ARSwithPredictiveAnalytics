@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from utilities.text_extraction import extract_text
 from utilities.pre_processing import preprocess_text
 from utilities.jaccard_similarity_scoring import calculate_resume_similarities
+from utilities.xgboost import predict_suitability
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the directory exists
@@ -14,8 +15,8 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route("/score-resume-using-ner", methods=["POST"])
-def score_resume_using_ner():
+@app.route("/rank-resume-using-tfidf-jaccard", methods=["POST"])
+def rank_resume_using_tfidf_jaccard():
     try:
         print("\n📝 Received request!")
 
@@ -48,11 +49,20 @@ def score_resume_using_ner():
 
             print(f"✅ Resume saved at: {resume_path}")
 
-        # 🟢 Call function using file paths (NOT preprocessed text)
-        results_dict = calculate_resume_similarities(job_path, resume_paths)
+        # 🟢 Step 1: Rank Resumes (TF-IDF + Jaccard)
+        ranking_results = calculate_resume_similarities(job_path, resume_paths)
 
-        # Extract comparisons from results
-        results = results_dict.get("resume_comparisons", [])
+        # Extract ranked resumes
+        ranked_resumes = ranking_results.get("resume_comparisons", [])
+
+        # 🟢 Step 2: Predict Suitability with XGBoost
+        predictions = predict_suitability([r["resume_path"] for r in ranked_resumes], job_path)
+
+        # Merge ranking & prediction
+        final_results = [
+            {"resume_path": r["resume_path"], "score": r["score"], "prediction": p}
+            for r, p in zip(ranked_resumes, predictions)
+        ]
 
         # ✅ Cleanup: Delete files after processing
         if os.path.exists(job_path):
@@ -62,13 +72,14 @@ def score_resume_using_ner():
             if os.path.exists(resume_path):
                 os.remove(resume_path)
 
-        return jsonify({"success": True, "data": {"resumes": results}})
+        return jsonify({"success": True, "data": {"resumes": final_results}})
 
     except Exception as e:
         print("🔥 ERROR:", str(e))
         import traceback
         print(traceback.format_exc())
         return jsonify({"success": False, "message": "Internal Server Error"}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

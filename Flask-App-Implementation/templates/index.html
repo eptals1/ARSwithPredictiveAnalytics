@@ -340,7 +340,7 @@
                     formData.append("job_description", jobFile);
 
                     // Score Resume - send to server
-                    fetch("/score-resume-using-ner", {
+                    fetch("/rank-resume-using-tfidf-jaccard", {
                         method: "POST",
                         body: formData,
                     })

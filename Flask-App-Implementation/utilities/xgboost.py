@@ -1,46 +1,53 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import pickle
 import numpy as np
 from utilities.text_extraction import extract_text
+from utilities.jaccard_similarity_scoring import calculate_resume_similarities
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import LabelEncoder
 
-def calculate_resume_similarities(job_path, resume_paths):
+# Load pre-trained models
+with open("models/xgboost_model.pkl", "rb") as file:
+    xgb_model = pickle.load(file)
+
+with open("models/vectorizer.pkl", "rb") as file:
+    vectorizer = pickle.load(file)
+
+with open("models/label_encoder.pkl", "rb") as file:
+    label_encoder = pickle.load(file)
+
+def predict_suitability(resume_paths, job_path):
+    """Predicts suitability of resumes using the trained XGBoost model."""
+    
     # Extract text from job description
     job_text = extract_text(job_path)
-
-    # Extract text from all resumes
+    
+    # Extract text from resumes
     resume_texts = [extract_text(resume) for resume in resume_paths]
-
-    # Remove empty resumes
+    
+    # Ensure all extracted texts are valid
     valid_resumes = [(path, text) for path, text in zip(resume_paths, resume_texts) if text]
     if not valid_resumes:
-        return {"resume_comparisons": []}
+        return ["Unknown"] * len(resume_paths)  # Return 'Unknown' if no valid resumes
 
     resume_paths, resume_texts = zip(*valid_resumes)
 
-    # TF-IDF Vectorization
-    vectorizer = TfidfVectorizer(stop_words="english")
-    tfidf_matrix = vectorizer.fit_transform([job_text] + list(resume_texts))
+    # TF-IDF Transformation (Use Pre-trained Vectorizer)
+    job_vector = vectorizer.transform([job_text])
+    resume_vectors = vectorizer.transform(resume_texts)
 
-    # Compute cosine similarity between job description and resumes
-    job_vec = tfidf_matrix[0]  # First document (job description)
-    resume_vecs = tfidf_matrix[1:]  # Remaining (resumes)
-    tfidf_similarities = cosine_similarity(job_vec, resume_vecs).flatten()
+    # Compute Jaccard Similarity
+    jaccard_similarities = np.array([
+        calculate_resume_similarities(job_path, [resume])["resume_comparisons"][0]["score"]
+        for resume in resume_paths
+    ]).reshape(-1, 1)  # Convert to column format
 
-    # Compute Jaccard similarity
-    def jaccard_similarity(text1, text2):
-        set1, set2 = set(text1.split()), set(text2.split())
-        return len(set1 & set2) / len(set1 | set2)
+    # Combine TF-IDF & Jaccard Scores
+    X_features = np.hstack((resume_vectors.toarray(), jaccard_similarities))
 
-    jaccard_similarities = np.array([jaccard_similarity(job_text, resume) for resume in resume_texts])
+    # Predict using XGBoost
+    predictions = xgb_model.predict(X_features)
 
-    # Combine TF-IDF and Jaccard scores (weighted)
-    combined_scores = 0.6 * tfidf_similarities + 0.4 * jaccard_similarities
+    # Decode Labels from LabelEncoder
+    decoded_predictions = label_encoder.inverse_transform(predictions)
 
-    # Sort resumes by combined similarity
-    ranked_indices = np.argsort(-combined_scores)
-    ranked_resumes = [
-        {"resume_path": resume_paths[i], "score": combined_scores[i]}
-        for i in ranked_indices
-    ]
-
-    return {"resume_comparisons": ranked_resumes}
+    return decoded_predictions.tolist()  # Return predictions as a list

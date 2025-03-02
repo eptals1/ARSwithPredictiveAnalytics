@@ -1,42 +1,46 @@
-import os
-from utilities.pre_processing import preprocess_text
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 from utilities.text_extraction import extract_text
 
-def jaccard_similarity(set1, set2):
-    """Compute Jaccard similarity between two sets of words."""
-    intersection = set1.intersection(set2)
-    union = set1.union(set2)
-    return len(intersection) / len(union) if union else 0
-
-# Main function to compare resumes with job descriptions
 def calculate_resume_similarities(job_path, resume_paths):
-    """Compute Jaccard similarity scores for resumes against job description."""
-    
-    job_text = extract_text(job_path) or ""  # Handle None case
-    job_tokens = set(preprocess_text(job_text).split())  # Convert to set
-    
-    results = []
+    # Extract text from job description
+    job_text = extract_text(job_path)
 
-    for resume_path in resume_paths:
-        resume_text = extract_text(resume_path) or ""  # Handle None case
-        resume_tokens = set(preprocess_text(resume_text).split())  # Convert to set
+    # Extract text from all resumes
+    resume_texts = [extract_text(resume) for resume in resume_paths]
 
-        similarity_score = jaccard_similarity(resume_tokens, job_tokens)
+    # Remove empty resumes
+    valid_resumes = [(path, text) for path, text in zip(resume_paths, resume_texts) if text]
+    if not valid_resumes:
+        return {"resume_comparisons": []}
 
-        # Find common words (intersection of job & resume words)
-        intersecting_words = list(resume_tokens.intersection(job_tokens))
+    resume_paths, resume_texts = zip(*valid_resumes)
 
-        results.append({
-            'filename': os.path.basename(resume_path),
-            'similarity': round(similarity_score, 2),
-            'resume_tokens': list(resume_tokens),
-            'intersecting_words': intersecting_words  # Words common in job & resume
-        })
+    # TF-IDF Vectorization
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform([job_text] + list(resume_texts))
 
-    # Sort results by highest similarity score
-    results.sort(key=lambda x: x['similarity'], reverse=True)
-    
-    return {
-        'job_tokens': list(job_tokens),
-        'resume_comparisons': results
-    }
+    # Compute cosine similarity between job description and resumes
+    job_vec = tfidf_matrix[0]  # First document (job description)
+    resume_vecs = tfidf_matrix[1:]  # Remaining (resumes)
+    tfidf_similarities = cosine_similarity(job_vec, resume_vecs).flatten()
+
+    # Compute Jaccard similarity
+    def jaccard_similarity(text1, text2):
+        set1, set2 = set(text1.split()), set(text2.split())
+        return len(set1 & set2) / len(set1 | set2)
+
+    jaccard_similarities = np.array([jaccard_similarity(job_text, resume) for resume in resume_texts])
+
+    # Combine TF-IDF and Jaccard scores (weighted)
+    combined_scores = 0.6 * tfidf_similarities + 0.4 * jaccard_similarities
+
+    # Sort resumes by combined similarity
+    ranked_indices = np.argsort(-combined_scores)
+    ranked_resumes = [
+        {"resume_path": resume_paths[i], "score": combined_scores[i]}
+        for i in ranked_indices
+    ]
+
+    return {"resume_comparisons": ranked_resumes}
