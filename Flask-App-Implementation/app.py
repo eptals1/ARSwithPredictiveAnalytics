@@ -1,74 +1,84 @@
 import os
+import pickle
+import numpy as np
+import pandas as pd
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
-from utilities.text_extraction import extract_text
-from utilities.pre_processing import preprocess_text
-from utilities.jaccard_similarity_scoring import calculate_resume_similarities
-
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the directory exists
+from utilities.text_extraction import extract_text  # Ensure you have this utility
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Load trained model and encoders
+with open("Flask-App-Implementation/models/label_encoder.pkl", "rb") as f:
+    label_encoder = pickle.load(f)
 
-@app.route("/score-resume-using-ner", methods=["POST"])
-def score_resume_using_ner():
-    try:
-        print("\n📝 Received request!")
+with open("Flask-App-Implementation/models/vectorizer.pkl", "rb") as f:
+    vectorizer = pickle.load(f)
 
-        if "job_description" not in request.files or "resumes[]" not in request.files:
-            return jsonify({"success": False, "message": "Missing files"}), 400
+with open("Flask-App-Implementation/models/xgboost_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
-        job_file = request.files["job_description"]
-        resume_files = request.files.getlist("resumes[]")
+# Allowed file types
+ALLOWED_EXTENSIONS = {"pdf", "docx", "txt"}
 
-        print(f"📂 Job File: {job_file.filename}")
-        print(f"📂 Received {len(resume_files)} resumes")
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-        if not job_file or not resume_files:
-            return jsonify({"success": False, "message": "Invalid file uploads"}), 400
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-        # ✅ Save job file temporarily
-        job_filename = secure_filename(job_file.filename)
-        job_path = os.path.join(UPLOAD_FOLDER, job_filename)
-        job_file.save(job_path)
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    if "files[]" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
 
-        print(f"✅ Job file saved at: {job_path}")
+    files = request.files.getlist("files[]")
+    results = []
 
-        # ✅ Save all resume files temporarily
-        resume_paths = []
-        for resume_file in resume_files:
-            resume_filename = secure_filename(resume_file.filename)
-            resume_path = os.path.join(UPLOAD_FOLDER, resume_filename)
-            resume_file.save(resume_path)
-            resume_paths.append(resume_path)
+    for file in files:
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join("uploads", filename)
+            file.save(file_path)
 
-            print(f"✅ Resume saved at: {resume_path}")
+            # Extract resume text
+            resume_text = extract_text(file_path)
 
-        # 🟢 Call function using file paths (NOT preprocessed text)
-        results_dict = calculate_resume_similarities(job_path, resume_paths)
+            # Transform text into TF-IDF features
+            resume_tfidf = vectorizer.transform([resume_text])
 
-        # Extract comparisons from results
-        results = results_dict.get("resume_comparisons", [])
+            # Predict job role
+            probabilities = model.predict_proba(resume_tfidf)[0]
+            top_indices = np.argsort(probabilities)[::-1][:3]  # Get top 3 job roles
+            top_roles = label_encoder.inverse_transform(top_indices)
+            top_scores = probabilities[top_indices] * 100  # Convert to percentage
 
-        # ✅ Cleanup: Delete files after processing
-        if os.path.exists(job_path):
-            os.remove(job_path)
+            # Generate skills and experience analysis
+            analysis = analyze_resume(resume_text)
 
-        for resume_path in resume_paths:
-            if os.path.exists(resume_path):
-                os.remove(resume_path)
+            # Store result
+            results.append({
+                "filename": filename,
+                "top_jobs": [{ "role": top_roles[i], "score": f"{top_scores[i]:.2f}%" } for i in range(len(top_roles))],
+                "analysis": analysis
+            })
 
-        return jsonify({"success": True, "data": {"resumes": results}})
+    return jsonify({"resumes": results})
 
-    except Exception as e:
-        print("🔥 ERROR:", str(e))
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({"success": False, "message": "Internal Server Error"}), 500
+def analyze_resume(text):
+    """Basic resume analysis - Extracts key skills & experience."""
+    skills = ["Python", "Java", "C++", "Machine Learning", "Data Analysis", "Sales", "Excel", "Project Management"]
+    experience_keywords = ["years", "months", "developer", "manager", "engineer", "assistant"]
+    
+    detected_skills = [skill for skill in skills if skill.lower() in text.lower()]
+    experience = [word for word in text.split() if word.lower() in experience_keywords]
+
+    return {
+        "skills": detected_skills or "Not detected",
+        "experience": " ".join(experience) or "Not detected"
+    }
 
 if __name__ == "__main__":
     app.run(debug=True)
