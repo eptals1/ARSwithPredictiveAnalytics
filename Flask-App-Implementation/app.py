@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from utilities.pre_processing import preprocess_text
 from utilities.jaccard_similarity_scoring import jaccard_similarity
 from utilities.text_extraction import extract_text
-
+import os
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -39,6 +39,10 @@ def upload_file():
 
     return jsonify({"text": extracted_text})
 
+
+FAILED_FOLDER = "failed_resumes"
+if not os.path.exists(FAILED_FOLDER):
+    os.makedirs(FAILED_FOLDER)
 
 @app.route("/tfidf-with-jaccard-ranking", methods=["POST"])
 def rank_resumes():
@@ -99,6 +103,17 @@ def rank_resumes():
             ],
         }
 
+        # Separate failed resumes
+        ranked_resumes = []
+        for idx, score in enumerate(final_scores):
+            filename = resume_files[idx].filename
+            if score < 0.50:  # Move failed resumes to the failed_resumes folder
+                failed_path = os.path.join(FAILED_FOLDER, filename)
+                resume_files[idx].save(failed_path)
+                logging.info(f"Moved {filename} to failed resumes folder.")
+            else:
+                ranked_resumes.append((idx, score))
+
         logging.info("Ranking completed successfully.")
         return jsonify(response)
 
@@ -106,38 +121,70 @@ def rank_resumes():
         logging.error(f"Error in ranking resumes: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-@app.route("/analyze-suitability", methods=["POST"])
-def analyze_suitability():
-    try:
-        logging.info("Received request for suitability analysis.")
-        data = request.json
+#--------------------------------------
+# XGBoost Prediction
+#--------------------------------------
 
-        if "filtered_resumes" not in data or "job_requirement" not in data:
-            logging.warning("Missing data in request.")
-            return jsonify({"success": False, "message": "Missing data"}), 400
+# Allowed file types
+ALLOWED_EXTENSIONS = {"pdf", "docx", "txt"}
 
-        job_text = data["job_requirement"]
-        resume_texts = data["filtered_resumes"]
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-        all_texts = [job_text] + resume_texts
-        tfidf_matrix = vectorizer.transform(all_texts)
-        resume_vectors = tfidf_matrix[1:]
+@app.route("/analyse-failed-resume", methods=["POST"])
+def analyse_failed_resume():
+    if not os.path.exists(FAILED_FOLDER):
+        return jsonify({"success": False, "message": "No failed resumes found."}), 400
 
-        if resume_vectors.shape[0] == 0:
-            logging.warning("No valid resumes to analyze.")
-            return jsonify({"success": False, "message": "No valid resumes to analyze"}), 400
+    files = [f for f in os.listdir(FAILED_FOLDER) if allowed_file(f)]
+    results = []
 
-        predictions = xgb_model.predict(resume_vectors)
-        predicted_labels = label_encoder.inverse_transform(predictions)
+    if not files:
+        return jsonify({"success": False, "message": "No valid resume files in failed folder."}), 400
 
-        alternative_jobs = {job: round((predicted_labels.tolist().count(job) / len(predicted_labels)) * 100, 2) for job in set(predicted_labels)}
+    for file in files:
+        file_path = os.path.join(FAILED_FOLDER, file)
 
-        logging.info("Suitability analysis completed successfully.")
-        return jsonify({"success": True, "alternative_jobs": alternative_jobs})
+        # Extract resume text
+        resume_text = extract_text(file_path)
 
-    except Exception as e:
-        logging.error(f"Error in suitability analysis: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        # Transform text into TF-IDF features
+        resume_tfidf = vectorizer.transform([resume_text])
+
+        # Predict job role
+        probabilities = model.predict_proba(resume_tfidf)[0]
+        top_indices = np.argsort(probabilities)[::-1][:3]  # Get top 3 job roles
+        top_roles = label_encoder.inverse_transform(top_indices)
+        top_scores = probabilities[top_indices] * 100  # Convert to percentage
+
+        # Generate skills and experience analysis
+        analysis = analyze_resume(resume_text)
+
+        # Store result
+        results.append({
+            "filename": file,
+            "top_jobs": [{ "role": top_roles[i], "score": f"{top_scores[i]:.2f}%" } for i in range(len(top_roles))],
+            "analysis": analysis
+        })
+
+    return jsonify({"success": True, "data": results})
+
+
+
+def analyze_resume(text):
+    """Basic resume analysis - Extracts key skills & experience."""
+    skills = ["Python", "Java", "C++", "Machine Learning", "Data Analysis", "Sales", "Excel", "Project Management"]
+    experience_keywords = ["years", "months", "developer", "manager", "engineer", "assistant"]
+    
+    detected_skills = [skill for skill in skills if skill.lower() in text.lower()]
+    experience = [word for word in text.split() if word.lower() in experience_keywords]
+
+    return {
+        "skills": detected_skills or "Not detected",
+        "experience": " ".join(experience) or "Not detected"
+    }
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
