@@ -99,6 +99,80 @@ def rank_resumes():
         logging.error(f"🔥 ERROR: {str(e)}")
         return jsonify({"success": False, "message": "Internal Server Error"}), 500
 
+#--------------------------------------
+# XGBoost Prediction
+#--------------------------------------
+
+# Load trained model and encoders
+with open("Flask-App-Implementation/models/label_encoder.pkl", "rb") as f:
+    label_encoder = pickle.load(f)
+
+with open("Flask-App-Implementation/models/vectorizer.pkl", "rb") as f:
+    vectorizer = pickle.load(f)
+
+with open("Flask-App-Implementation/models/xgboost_model.pkl", "rb") as f:
+    model = pickle.load(f)
+
+# Allowed file types
+ALLOWED_EXTENSIONS = {"pdf", "docx", "txt"}
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/analyse-failed-resume", methods=["POST"])
+def analyse_failed_resume():
+    FAILED_FOLDER = "failed_resumes"
+
+    if not os.path.exists(FAILED_FOLDER):
+        return jsonify({"success": False, "message": "No failed resumes found."}), 400
+
+    files = [f for f in os.listdir(FAILED_FOLDER) if allowed_file(f)]
+    results = []
+
+    if not files:
+        return jsonify({"success": False, "message": "No valid resume files in failed folder."}), 400
+
+    for file in files:
+        file_path = os.path.join(FAILED_FOLDER, file)
+
+        # Extract resume text
+        resume_text = extract_text(file_path)
+
+        # Transform text into TF-IDF features
+        resume_tfidf = vectorizer.transform([resume_text])
+
+        # Predict job role
+        probabilities = model.predict_proba(resume_tfidf)[0]
+        top_indices = np.argsort(probabilities)[::-1][:3]  # Get top 3 job roles
+        top_roles = label_encoder.inverse_transform(top_indices)
+        top_scores = probabilities[top_indices] * 100  # Convert to percentage
+
+        # Generate skills and experience analysis
+        analysis = analyze_resume(resume_text)
+
+        # Store result
+        results.append({
+            "filename": file,
+            "top_jobs": [{ "role": top_roles[i], "score": f"{top_scores[i]:.2f}%" } for i in range(len(top_roles))],
+            "analysis": analysis
+        })
+
+    return jsonify({"success": True, "data": results})
+
+
+
+def analyze_resume(text):
+    """Basic resume analysis - Extracts key skills & experience."""
+    skills = ["Python", "Java", "C++", "Machine Learning", "Data Analysis", "Sales", "Excel", "Project Management"]
+    experience_keywords = ["years", "months", "developer", "manager", "engineer", "assistant"]
+    
+    detected_skills = [skill for skill in skills if skill.lower() in text.lower()]
+    experience = [word for word in text.split() if word.lower() in experience_keywords]
+
+    return {
+        "skills": detected_skills or "Not detected",
+        "experience": " ".join(experience) or "Not detected"
+    }
 
 if __name__ == "__main__":
     app.run(debug=True)
