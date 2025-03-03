@@ -5,7 +5,7 @@ from utilities.pre_processing import preprocess_text
 from utilities.jaccard_similarity_scoring import jaccard_similarity
 
 # Load pre-trained vectorizer
-with open("vectorizer.pkl", "rb") as f:
+with open("models/vectorizer.pkl", "rb") as f:
     vectorizer = pickle.load(f)
 
 def rank_resumes(job_text, resume_texts):

@@ -1,7 +1,7 @@
 import xgboost as xgb
 import pandas as pd
 import os
-from utilities.pre_processing import extract_text_from_file, preprocess_text
+from utilities.pre_processing import extract_text, preprocess_text
 from utilities.similarity_utils import jaccard_similarity  # Import from the new file
 
 MODEL_PATH = "xgboost_ranking_model.json"
