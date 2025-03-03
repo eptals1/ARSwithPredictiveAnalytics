@@ -15,31 +15,43 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route("/rank-resume-using-tfidf-jaccard", methods=["POST"])
-def rank_resume_using_tfidf_jaccard():
+@app.route("/tfidf-with-jaccard-ranking", methods=["POST"])
+def rank_resumes():
     try:
-        print("\n📝 Received request!")
+        logging.info("📥 Received request for TF-IDF + Jaccard ranking.")
 
-        if "job_description" not in request.files or "resumes[]" not in request.files:
+        # Validate request
+        if "job_requirement" not in request.files or "resumes" not in request.files:
+            logging.warning("⚠️ Missing job description or resumes in request.")
             return jsonify({"success": False, "message": "Missing files"}), 400
 
         job_file = request.files["job_description"]
         resume_files = request.files.getlist("resumes[]")
 
-        print(f"📂 Job File: {job_file.filename}")
-        print(f"📂 Received {len(resume_files)} resumes")
+        if job_file.filename == "":
+            logging.warning("⚠️ Job description file is empty.")
+            return jsonify({"success": False, "message": "Job description file is empty"}), 400
 
-        if not job_file or not resume_files:
-            return jsonify({"success": False, "message": "Invalid file uploads"}), 400
+        if not resume_files:
+            logging.warning("⚠️ No resumes uploaded.")
+            return jsonify({"success": False, "message": "No resumes provided"}), 400
+
+        # ✅ Extract job text
+        job_text = extract_text(job_file)
+
+        # ✅ Extract resume texts
+        resume_texts = [extract_text(resume) for resume in resume_files]
+
+        logging.debug(f"📄 Extracted job text: {job_text[:500]}")
+        logging.debug(f"📂 Extracted {len(resume_texts)} resumes.")
 
         # ✅ Save job file temporarily
         job_filename = secure_filename(job_file.filename)
         job_path = os.path.join(UPLOAD_FOLDER, job_filename)
         job_file.save(job_path)
+        logging.info(f"📄 Job file saved at: {job_path}")
 
-        print(f"✅ Job file saved at: {job_path}")
-
-        # ✅ Save all resume files temporarily
+        # ✅ Save resume files temporarily
         resume_paths = []
         for resume_file in resume_files:
             resume_filename = secure_filename(resume_file.filename)
@@ -47,24 +59,33 @@ def rank_resume_using_tfidf_jaccard():
             resume_file.save(resume_path)
             resume_paths.append(resume_path)
 
-            print(f"✅ Resume saved at: {resume_path}")
+            logging.info(f"✅ Resume saved at: {resume_path}")
 
         # 🟢 Step 1: Rank Resumes (TF-IDF + Jaccard)
-        ranking_results = calculate_resume_similarities(job_path, resume_paths)
+        ranking_results = rank_resumes(job_text, resume_texts)
 
         # Extract ranked resumes
         ranked_resumes = ranking_results.get("resume_comparisons", [])
 
         # 🟢 Step 2: Predict Suitability with XGBoost
-        predictions = predict_suitability([r["resume_path"] for r in ranked_resumes], job_path)
+        predictions = predict_suitability(resume_texts, job_text)  # ✅ Use extracted text, not paths
 
-        # Merge ranking & prediction
-        final_results = [
-            {"resume_path": r["resume_path"], "score": r["score"], "prediction": p}
-            for r, p in zip(ranked_resumes, predictions)
-        ]
+        final_results = []
+        for r, p in zip(ranked_resumes, predictions):
+            result = {
+                "resume_path": r["resume_path"],
+                "score": r["score"],
+                "prediction": p
+            }
+            final_results.append(result)
 
-        # ✅ Cleanup: Delete files after processing
+            # 🚨 Move rejected resumes to `failed_resumes` folder
+            if p < 0.5:  # Adjust threshold as needed
+                failed_path = os.path.join(FAILED_FOLDER, os.path.basename(r["resume_path"]))
+                shutil.move(r["resume_path"], failed_path)
+                logging.warning(f"🚨 Moved to failed resumes: {failed_path}")
+
+        # ✅ Cleanup: Delete job file after processing
         if os.path.exists(job_path):
             os.remove(job_path)
 
@@ -75,9 +96,7 @@ def rank_resume_using_tfidf_jaccard():
         return jsonify({"success": True, "data": {"resumes": final_results}})
 
     except Exception as e:
-        print("🔥 ERROR:", str(e))
-        import traceback
-        print(traceback.format_exc())
+        logging.error(f"🔥 ERROR: {str(e)}")
         return jsonify({"success": False, "message": "Internal Server Error"}), 500
 
 
